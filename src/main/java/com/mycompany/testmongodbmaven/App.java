@@ -18,7 +18,8 @@ import pt.ua.dicoogle.sdk.settings.Settings;
  */
 public class App{
 
-    private static String QUERY = "(AcquisitionDate:[19960227 TO 19970205] AND (Columns:[500.0 TO 600.0] OR Columns:396.0)) OR (PatientName:TOSHIBA AND BitsAllocated:16.0) AND NOT InstitutionName:kodak";
+    //private static String QUERY = "(AcquisitionDate:[19960227 TO 19970205] AND (Columns:[500.0 TO 600.0] OR Columns:396.0)) OR (PatientName:TOSHIBA AND BitsAllocated:16.0) AND NOT InstitutionName:kodak";
+    private static String QUERY = "str:test";
     private static String pathConfigFile = "D:\\Louis\\Projects NetBeans\\Dicoogle\\MongoPlugin\\configClient.xml";
     
     public static void main(String[] args) {
@@ -33,7 +34,7 @@ public class App{
         Iterable<SearchResult> res = plugin.query(QUERY, (Object[]) null);
         Iterator<SearchResult> it = res.iterator();
         while(it.hasNext())
-            System.out.println(it.next().toString());
+            System.out.println(it.next().getExtraData().toString());
         plugin.disable();
     }
     

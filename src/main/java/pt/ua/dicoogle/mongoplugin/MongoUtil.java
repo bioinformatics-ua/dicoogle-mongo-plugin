@@ -8,8 +8,10 @@ import java.util.HashMap;
 import java.net.URI;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
+import com.mongodb.gridfs.GridFSDBFile;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Map;
 import pt.ua.dicoogle.sdk.datastructs.SearchResult;
 
 /**
@@ -17,17 +19,28 @@ import pt.ua.dicoogle.sdk.datastructs.SearchResult;
  * @author Louis
  */
 public class MongoUtil {
-    
-    public static List<SearchResult> getListFromResult(List<DBObject> dbObjs, URI location, float score){
+
+    /*public static List<SearchResult> getListFromResult(List<DBObject> dbObjs, URI location, float score){
+     ArrayList<SearchResult> result = new ArrayList<SearchResult>();
+     for(int i=0; i<dbObjs.size();i++){
+     SearchResult searchResult;
+     searchResult = new SearchResult(location, score, (HashMap<String,Object>)dbObjs.get(i).toMap());
+     result.add(searchResult);
+     }
+     return result;
+     }*/
+    public static List<SearchResult> getListFromResult(List<GridFSDBFile> dbObjs, URI location, float score) {
         ArrayList<SearchResult> result = new ArrayList<SearchResult>();
-        for(int i=0; i<dbObjs.size();i++){
+        for (int i = 0; i < dbObjs.size(); i++) {
             SearchResult searchResult;
-            searchResult = new SearchResult(location, score, (HashMap<String,Object>)dbObjs.get(i).toMap());
-            result.add(searchResult);
+            if (dbObjs.get(i).getMetaData() != null) {
+                searchResult = new SearchResult(location, score, (HashMap<String, Object>) dbObjs.get(i).getMetaData().toMap());
+                result.add(searchResult);
+            }
         }
         return result;
     }
-    
+
     private static BasicDBObject decodeStringToQuery(String strQuery) {
         BasicDBObject query;
         Object obj, lowObj, highObj;
@@ -64,7 +77,7 @@ public class MongoUtil {
                     highValue = str;
                     break;
                 case ' ':
-                    if(str.equalsIgnoreCase("NOT")){
+                    if (str.equalsIgnoreCase("NOT")) {
                         isNot = true;
                         str = "";
                         break;
@@ -92,7 +105,7 @@ public class MongoUtil {
             } catch (NumberFormatException e) {
                 highObj = highValue;
             }
-            query = madeQueryIsBetween(field, lowObj, highObj,isInclusiveBetween);
+            query = madeQueryIsBetween(field, lowObj, highObj, isInclusiveBetween);
             return query;
         }
         try {
@@ -111,16 +124,19 @@ public class MongoUtil {
         char currentChar = 0;
         int cmp = 0, length, nbParOpen = 0, nbBrackets = 0;
         boolean and = false, or = false, isBlank = true;
-        if(strQuery == null || strQuery.equalsIgnoreCase(""))
-            return madeQueryFindAll();     
-        length = strQuery.length();
-        for(int i=0; i< length; i++){
-            currentChar = strQuery.charAt(i);
-            if(currentChar != ' ' && currentChar != '*' && currentChar != '"')
-                isBlank = false;
-        }
-        if(isBlank)
+        if (strQuery == null || strQuery.equalsIgnoreCase("")) {
             return madeQueryFindAll();
+        }
+        length = strQuery.length();
+        for (int i = 0; i < length; i++) {
+            currentChar = strQuery.charAt(i);
+            if (currentChar != ' ' && currentChar != '*' && currentChar != '"') {
+                isBlank = false;
+            }
+        }
+        if (isBlank) {
+            return madeQueryFindAll();
+        }
         while (cmp != length) {
             currentChar = strQuery.charAt(cmp);
             cmp++;
@@ -136,8 +152,9 @@ public class MongoUtil {
                     nbBrackets--;
                     break;
                 case '(':
-                    if(nbParOpen != 0)
+                    if (nbParOpen != 0) {
                         str += currentChar;
+                    }
                     nbParOpen++;
                     break;
                 case ')':
@@ -155,12 +172,12 @@ public class MongoUtil {
                             or = false;
                         }
                         str = "";
-                    }
-                    else
+                    } else {
                         str += currentChar;
+                    }
                     break;
                 case ' ':
-                    if(str.equalsIgnoreCase("NOT")){
+                    if (str.equalsIgnoreCase("NOT")) {
                         str += currentChar;
                         break;
                     }
@@ -181,8 +198,9 @@ public class MongoUtil {
                         str = "";
                     } else {
                         String temp = "";
-                        if(cmp+3<length)
+                        if (cmp + 3 < length) {
                             temp = strQuery.substring(cmp, cmp + 3);
+                        }
                         if (temp.equalsIgnoreCase("AND") || temp.equalsIgnoreCase("OR ")) {
                             if (!and && !or) {
                                 if (!str.equals("")) {
@@ -219,39 +237,45 @@ public class MongoUtil {
         }
         return query;
     }
-    
+
     private static BasicDBObject madeQueryFindAll() {
         BasicDBObject query = new BasicDBObject();
         return query;
     }
-    
+
     private static BasicDBObject madeQueryIsValue(String field, Object value, boolean isNot) {
         BasicDBObject query = new BasicDBObject();
-        if(!isNot)
-            query.put(field, value);
-        else
-            query.put(field, new BasicDBObject("$ne",value));
+        String str = "metadata." + field;
+        if (!isNot) {
+            query.put(str, value);
+        } else {
+            query.put(str, new BasicDBObject("$ne", value));
+        }
         return query;
     }
 
     private static BasicDBObject madeQueryIsValueRegexInsensitive(String field, Object value, boolean isNot) {
         BasicDBObject query = new BasicDBObject();
-        if(!isNot)
-            query.put(field, new BasicDBObject("$regex", value + ".*").append("$options", "i"));
-        else
-            query.put(field, new BasicDBObject("$ne",value));
+        String str = "metadata." + field;
+        if (!isNot) {
+            query.put(str, new BasicDBObject("$regex", value + ".*").append("$options", "i"));
+        } else {
+            query.put(str, new BasicDBObject("$ne", value));
+        }
         return query;
     }
 
     private static BasicDBObject madeQueryIsBetween(String field, Object lowValue, Object highValue, boolean isInclusive) {
         BasicDBObject query = new BasicDBObject();
-        if(!isInclusive)
-            query.put(field, new BasicDBObject("$gt", lowValue).append("$lt", highValue));
-        else
-            query.put(field, new BasicDBObject("$gte", lowValue).append("$lte", highValue));
+        String str = "metadata." + field;
+        if (!isInclusive) {
+            query.put(str, new BasicDBObject("$gt", lowValue).append("$lt", highValue));
+        } else {
+            query.put(str, new BasicDBObject("$gte", lowValue).append("$lte", highValue));
+        }
         return query;
     }
-    
+
     private static BasicDBObject madeQueryAND(BasicDBObject dbObj1, BasicDBObject dbObj2) {
         BasicDBObject query = new BasicDBObject();
         List<BasicDBObject> listObj = new ArrayList<BasicDBObject>();

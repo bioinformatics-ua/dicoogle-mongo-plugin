@@ -4,6 +4,7 @@
  */
 package pt.ua.dicoogle.mongoplugin;
 
+import com.mongodb.BasicDBObject;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -11,10 +12,10 @@ import java.net.UnknownHostException;
 import java.util.Scanner;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
-import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoException;
 import com.mongodb.gridfs.GridFS;
+import com.mongodb.gridfs.GridFSDBFile;
 import com.mongodb.gridfs.GridFSInputFile;
 import java.util.ArrayList;
 import java.util.List;
@@ -57,7 +58,7 @@ public class MongoPlugin implements QueryInterface, StorageInterface {
             return null;
         }
         MongoQuery mongoQuery = new MongoQuery(query);
-        List<DBObject> resultDBobjs = mongoQuery.processQuery(collection);
+        List<GridFSDBFile> resultDBobjs = mongoQuery.processQuery(db);
         result = MongoUtil.getListFromResult(resultDBobjs, location, (float) 0.0);
         return result;
     }
@@ -128,7 +129,7 @@ public class MongoPlugin implements QueryInterface, StorageInterface {
     @Override
     public Iterable<StorageInputStream> at(URI location){
         MongoURI uri = new MongoURI(location);
-        if(!uri.verify())
+        if(!isEnable || !uri.verify() || mongoClient == null)
             return null;
         ArrayList<StorageInputStream> list = new ArrayList<StorageInputStream>();
         list.add(new MongoStorageInputStream(location));
@@ -137,13 +138,13 @@ public class MongoPlugin implements QueryInterface, StorageInterface {
     
     // Just to test
     public URI store(String str){
-        if(!isEnable)
+        if(!isEnable || mongoClient == null)
             return null;
         GridFS saveFs = new GridFS(this.db);
         String fileName = UUID.randomUUID().toString();
-        byte[] pixelData = str.getBytes();
-        GridFSInputFile ins = saveFs.createFile(pixelData);
+        GridFSInputFile ins = saveFs.createFile((this.getLocation()+"/"+fileName).getBytes());
         ins.setFilename(fileName);
+        ins.setMetaData(new BasicDBObject("str",str));
         ins.save();
         URI uri = null;
         try{
@@ -155,51 +156,75 @@ public class MongoPlugin implements QueryInterface, StorageInterface {
     
     @Override
     public URI store(DicomObject dicomObject){
-        if(!isEnable)
+        if(!isEnable || mongoClient == null)
             return null;
         GridFS saveFs = new GridFS(this.db);
         String fileName = UUID.randomUUID().toString();
         GridFSInputFile ins = saveFs.createFile();
         ins.setFilename(fileName);
-        //Patient
-        ins.put("PatientName", dicomObject.getBytes(Tag.PatientName));
-        ins.put("PatienID", dicomObject.getBytes(Tag.PatientID));
-        ins.put("PatientBirthDate", dicomObject.getBytes(Tag.PatientBirthDate));
-        ins.put("PatientSex", dicomObject.getBytes(Tag.PatientSex));
-        //Study
-        ins.put("StudyInstanceUID", dicomObject.getBytes(Tag.StudyInstanceUID));
-        ins.put("StudyDate", dicomObject.getBytes(Tag.StudyDate));
-        ins.put("StudyTime", dicomObject.getBytes(Tag.StudyTime));
-        ins.put("StudyID", dicomObject.getBytes(Tag.StudyID));
-        ins.put("ReferringPhysicianName", dicomObject.getBytes(Tag.ReferringPhysicianName));
-        ins.put("AccessionNumber", dicomObject.getBytes(Tag.AccessionNumber));
-        //Series
-        ins.put("SeriesInstanceUID", dicomObject.getBytes(Tag.SeriesInstanceUID));
-        ins.put("SeriesNumber", dicomObject.getBytes(Tag.SeriesNumber));
-        ins.put("ModalityLUTType", dicomObject.getBytes(Tag.ModalityLUTType));
-        //Equipment
-        ins.put("Manufacturer", dicomObject.getBytes(Tag.Manufacturer));
-        ins.put("InstitutionName", dicomObject.getBytes(Tag.InstitutionName));
-        // Image data
-        // Acquisition Attributes
-        ins.put("AccessionNumber", dicomObject.getBytes(Tag.AccessionNumber));
-        ins.put("AcquisitionDate", dicomObject.getBytes(Tag.AcquisitionDate));
-        ins.put("AcquisitionNumber", dicomObject.getBytes(Tag.AcquisitionNumber));
-        ins.put("AcquisitionTime", dicomObject.getBytes(Tag.AcquisitionTime));
-        ins.put("ImageNumber", dicomObject.getBytes(Tag.ImageBoxNumber));
-        ins.put("ImageType", dicomObject.getBytes(Tag.ImageType));
-        ins.put("BitsAllocated", dicomObject.getBytes(Tag.BitsAllocated));
-        ins.put("BitsStored", dicomObject.getBytes(Tag.BitsStored));
-        ins.put("HighBit", dicomObject.getBytes(Tag.HighBit));
-        ins.put("Rows", dicomObject.getBytes(Tag.Rows));
-        ins.put("Columns", dicomObject.getBytes(Tag.Columns));
-        ins.put("SamplesPerPixel", dicomObject.getBytes(Tag.SamplesPerPixel));
-        ins.put("PlanarConfiguration", dicomObject.getBytes(Tag.PlanarConfiguration));
-        ins.put("PixelRepresentation", dicomObject.getBytes(Tag.PixelRepresentation));
-        ins.put("PhotometricInterpretation", dicomObject.getBytes(Tag.PhotometricInterpretation));
-        ins.put("PixelData", dicomObject.getBytes(Tag.PixelData));
-        ins.put("WindowWidth", dicomObject.getBytes(Tag.WindowWidth));
-        ins.put("WindowCenter", dicomObject.getBytes(Tag.WindowCenter));
+        
+        ins.setMetaData(new BasicDBObject("AccessionNumber", dicomObject.getBytes(Tag.AccessionNumber)));
+        ins.setMetaData(new BasicDBObject("AcquisitionDate", dicomObject.getBytes(Tag.AcquisitionDate)));
+        ins.setMetaData(new BasicDBObject("AcquisitionNumber", dicomObject.getBytes(Tag.AcquisitionNumber)));
+        ins.setMetaData(new BasicDBObject("AcquisitionTime", dicomObject.getBytes(Tag.AcquisitionTime)));
+        ins.setMetaData(new BasicDBObject("BitsAllocated", dicomObject.getBytes(Tag.BitsAllocated)));
+        ins.setMetaData(new BasicDBObject("BitsStored", dicomObject.getBytes(Tag.BitsStored)));
+        ins.setMetaData(new BasicDBObject("Columns", dicomObject.getBytes(Tag.Columns)));
+        ins.setMetaData(new BasicDBObject("ConversionType", dicomObject.getBytes(Tag.ConversionType)));
+        ins.setMetaData(new BasicDBObject("DeviceSerialNumber", dicomObject.getBytes(Tag.DeviceSerialNumber)));
+        ins.setMetaData(new BasicDBObject("HighBit", dicomObject.getBytes(Tag.HighBit)));
+        ins.setMetaData(new BasicDBObject("DeviceSerialNumber", dicomObject.getBytes(Tag.ImageComments)));
+        ins.setMetaData(new BasicDBObject("ImageType", dicomObject.getBytes(Tag.ImageType)));
+        ins.setMetaData(new BasicDBObject("ImplementationClassUID", dicomObject.getBytes(Tag.ImplementationClassUID)));
+        ins.setMetaData(new BasicDBObject("InstanceNumber", dicomObject.getBytes(Tag.InstanceNumber)));
+        ins.setMetaData(new BasicDBObject("InstitutionalDepartmentName", dicomObject.getBytes(Tag.InstitutionalDepartmentName)));
+        ins.setMetaData(new BasicDBObject("InstitutionName", dicomObject.getBytes(Tag.InstitutionName)));
+        ins.setMetaData(new BasicDBObject("LargestImagePixelValue", dicomObject.getBytes(Tag.LargestImagePixelValue)));
+        ins.setMetaData(new BasicDBObject("Laterality", dicomObject.getBytes(Tag.Laterality)));
+        ins.setMetaData(new BasicDBObject("Manufacturer", dicomObject.getBytes(Tag.Manufacturer)));
+        ins.setMetaData(new BasicDBObject("ManufacturerModelName", dicomObject.getBytes(Tag.ManufacturerModelName)));
+        ins.setMetaData(new BasicDBObject("MediaStorageSOPClassUID", dicomObject.getBytes(Tag.MediaStorageSOPClassUID)));
+        ins.setMetaData(new BasicDBObject("MediaStorageSOPInstanceUID", dicomObject.getBytes(Tag.MediaStorageSOPInstanceUID)));
+        ins.setMetaData(new BasicDBObject("ModalitiesInStudy", dicomObject.getBytes(Tag.ModalitiesInStudy)));
+        ins.setMetaData(new BasicDBObject("Modality", dicomObject.getBytes(Tag.Modality)));
+        ins.setMetaData(new BasicDBObject("NumberOfStudyRelatedInstances", dicomObject.getBytes(Tag.NumberOfStudyRelatedInstances)));
+        ins.setMetaData(new BasicDBObject("OperatorName", dicomObject.getBytes(Tag.OperatorsName)));
+        ins.setMetaData(new BasicDBObject("PatientAge", dicomObject.getBytes(Tag.PatientAge)));
+        ins.setMetaData(new BasicDBObject("PatientBirthDate", dicomObject.getBytes(Tag.PatientBirthDate)));
+        ins.setMetaData(new BasicDBObject("PatientID", dicomObject.getBytes(Tag.PatientID)));
+        ins.setMetaData(new BasicDBObject("PatientName", dicomObject.getBytes(Tag.PatientName)));
+        ins.setMetaData(new BasicDBObject("PatientOrientation", dicomObject.getBytes(Tag.PatientOrientation)));
+        ins.setMetaData(new BasicDBObject("PatientPosition", dicomObject.getBytes(Tag.PatientPosition)));
+        ins.setMetaData(new BasicDBObject("PatientSex", dicomObject.getBytes(Tag.PatientSex)));
+        ins.setMetaData(new BasicDBObject("PatientTelephoneNumbers", dicomObject.getBytes(Tag.PatientTelephoneNumbers)));
+        ins.setMetaData(new BasicDBObject("PerformedLocation", dicomObject.getBytes(Tag.PerformedLocation)));
+        ins.setMetaData(new BasicDBObject("PerformingPhysicianName", dicomObject.getBytes(Tag.PerformingPhysicianName)));
+        ins.setMetaData(new BasicDBObject("PhotometricInterpretation", dicomObject.getBytes(Tag.PhotometricInterpretation)));
+        ins.setMetaData(new BasicDBObject("PixelRepresentation", dicomObject.getBytes(Tag.PixelRepresentation)));
+        ins.setMetaData(new BasicDBObject("PregnancyStatus", dicomObject.getBytes(Tag.PregnancyStatus)));
+        ins.setMetaData(new BasicDBObject("Priority", dicomObject.getBytes(Tag.Priority)));
+        ins.setMetaData(new BasicDBObject("ProtocolName", dicomObject.getBytes(Tag.ProtocolName)));
+        ins.setMetaData(new BasicDBObject("ReferringPhysicianName", dicomObject.getBytes(Tag.ReferringPhysicianName)));
+        ins.setMetaData(new BasicDBObject("Rows", dicomObject.getBytes(Tag.Rows)));
+        ins.setMetaData(new BasicDBObject("SOPClassUID", dicomObject.getBytes(Tag.SOPClassUID)));
+        ins.setMetaData(new BasicDBObject("SOPInstanceUID", dicomObject.getBytes(Tag.SOPInstanceUID)));
+        ins.setMetaData(new BasicDBObject("SamplesPerPixel", dicomObject.getBytes(Tag.SamplesPerPixel)));
+        ins.setMetaData(new BasicDBObject("SecondaryCaptureDeviceID", dicomObject.getBytes(Tag.SecondaryCaptureDeviceID)));
+        ins.setMetaData(new BasicDBObject("SecondaryCaptureDeviceManufacturer", dicomObject.getBytes(Tag.SecondaryCaptureDeviceManufacturer)));
+        ins.setMetaData(new BasicDBObject("SecondaryCaptureDeviceManufacturerModelName", dicomObject.getBytes(Tag.SecondaryCaptureDeviceManufacturerModelName)));
+        ins.setMetaData(new BasicDBObject("SeriesDate", dicomObject.getBytes(Tag.SeriesDate)));
+        ins.setMetaData(new BasicDBObject("SeriesInstanceUID", dicomObject.getBytes(Tag.SeriesInstanceUID)));
+        ins.setMetaData(new BasicDBObject("SeriesNumber", dicomObject.getBytes(Tag.SeriesNumber)));
+        ins.setMetaData(new BasicDBObject("SeriesTime", dicomObject.getBytes(Tag.SeriesTime)));
+        ins.setMetaData(new BasicDBObject("SmallestImagePixelValue", dicomObject.getBytes(Tag.SmallestImagePixelValue)));
+        ins.setMetaData(new BasicDBObject("StudyDate", dicomObject.getBytes(Tag.StudyDate)));
+        ins.setMetaData(new BasicDBObject("StudyDescription", dicomObject.getBytes(Tag.StudyDescription)));
+        ins.setMetaData(new BasicDBObject("StudyID", dicomObject.getBytes(Tag.StudyID)));
+        ins.setMetaData(new BasicDBObject("StudyInstanceUID", dicomObject.getBytes(Tag.StudyInstanceUID)));
+        ins.setMetaData(new BasicDBObject("StudyTime", dicomObject.getBytes(Tag.StudyTime)));
+        ins.setMetaData(new BasicDBObject("TransferSyntaxUID", dicomObject.getBytes(Tag.TransferSyntaxUID)));
+        
+        ins.setMetaData(new BasicDBObject("PixelData", dicomObject.getBytes(Tag.PixelData)));
         ins.save();
         URI uri = null;
         try{
@@ -219,7 +244,7 @@ public class MongoPlugin implements QueryInterface, StorageInterface {
     @Override
     public void remove(URI location){
         MongoURI uri = new MongoURI(location);
-        if(!uri.verify())
+        if(!isEnable || !uri.verify() || mongoClient == null)
             return;
         uri.getInformation();
         DB dbTemp = mongoClient.getDB(uri.getDBName());
