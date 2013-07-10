@@ -19,7 +19,7 @@ import pt.ua.dicoogle.sdk.settings.Settings;
 public class App{
 
     //private static String QUERY = "(AcquisitionDate:[19960227 TO 19970205] AND (Columns:[500.0 TO 600.0] OR Columns:396.0)) OR (PatientName:TOSHIBA AND BitsAllocated:16.0) AND NOT InstitutionName:kodak";
-    private static String QUERY = "str:test";
+    private static String QUERY = "str:t*t";
     private static String pathConfigFile = ".\\configClient.xml";
     
     public static void main(String[] args) {
@@ -36,48 +36,6 @@ public class App{
         while(it.hasNext())
             System.out.println(it.next().getExtraData().toString());
         plugin.disable();
-    }
-    
-    private static void initData(DBCollection collection) {
-        BasicDBObject document = new BasicDBObject();
-        document.put("AcquisitionDate", 19970205);
-        document.put("AcquisitionNumber", 890.0);
-        document.put("AcquisitionTime", 074737);
-        document.put("BitsAllocated", 8.0);
-        document.put("BitsStored", 8.0);
-        document.put("Columns", 396.0);
-        document.put("ConversionType", "WSD ");
-        document.put("InstitutionName", "BOSTON MED CENT E.N.C   ");
-        document.put("PatientName", "CT BRONCHOSCOPY ");
-        collection.insert(document);
-
-        document = new BasicDBObject();
-        document.put("AcquisitionDate", 19960227);
-        document.put("AcquisitionTime", 082430.000);
-        document.put("BitsAllocated", 8.0);
-        document.put("BitsStored", 8.0);
-        document.put("Columns", 512.0);
-        document.put("InstitutionName", "kodak");
-        document.put("PatientName", "KODAK_DEMO_DISK ");
-        collection.insert(document);
-
-        document = new BasicDBObject();
-        document.put("AcquisitionNumber", 6.0);
-        document.put("BitsAllocated", 16.0);
-        document.put("BitsStored", 16.0);
-        document.put("Columns", 512.0);
-        document.put("InstitutionName", "TOSHIBA     ");
-        document.put("PatientName", "TOSHIBA^TARO");
-        collection.insert(document);
-
-        document = new BasicDBObject();
-        document.put("BitsAllocated", 8.0);
-        document.put("BitsStored", 8.0);
-        document.put("Columns", 512.0);
-        document.put("ImageComments", "Hicor DCM ");
-        document.put("InstitutionName", "THORAX CENTER ROTTERDAM ");
-        document.put("PatientTelephoneNumbers", 19990401);
-        collection.insert(document);
     }
 
     public static int[] getByteArrayFromFile(File file) {
