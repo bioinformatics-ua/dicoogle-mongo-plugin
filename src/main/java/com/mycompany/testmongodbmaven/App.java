@@ -1,46 +1,42 @@
 package com.mycompany.testmongodbmaven;
 
+import pt.ua.dicoogle.mongoplugin.MongoPlugin;
 import com.mongodb.*;
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.FileNotFoundException;
+import java.util.Iterator;
+import pt.ua.dicoogle.sdk.datastructs.SearchResult;
+import pt.ua.dicoogle.sdk.settings.Settings;
 
 /**
  * Getting started with MongoDB
  *
  * @author Louis Beroud
  */
-public class App {
+public class App{
 
-    private static String host = "localhost";
-    private static int port = 27017;
-
+    private static String QUERY = "(AcquisitionDate:[19960227 TO 19970205] AND (Columns:[500.0 TO 600.0] OR Columns:396.0)) OR (PatientName:TOSHIBA AND BitsAllocated:16.0) AND NOT InstitutionName:kodak";
+    private static String pathConfigFile = "D:\\Louis\\Projects NetBeans\\Dicoogle\\MongoPlugin\\configClient.xml";
+    
     public static void main(String[] args) {
-        // Get the Mongo Client
-        MongoClient mongoClient = MongoUtil.getMongoClient(host, port);
-        DB db = mongoClient.getDB("DICOMtest");
-        DBCollection collection = db.getCollection("DICOMdata");
-        //initData(collection);
-        
-        System.out.println("Query : BitsAllocated = 8.0");
-        BasicDBObject query = MongoUtil.madeQueryIsValue("BitsAllocated", 8.0);
-        DBObject[] resultDBobjs = MongoUtil.processQuery(collection, query);
-        MongoUtil.printResult(resultDBobjs);
-        
-        System.out.println("Query : BitsAllocated = 8.0 AND Columns = 512.0");
-        query = MongoUtil.madeQueryAND(MongoUtil.madeQueryIsValue("BitsAllocated", 8.0),
-                                        MongoUtil.madeQueryIsValue("Columns", 512.0));
-        resultDBobjs = MongoUtil.processQuery(collection, query);
-        MongoUtil.printResult(resultDBobjs);
-        
-        System.out.println("Query : (BitsAllocated = 8.0 AND Columns = 512.0) OR PatientName = TOSHIBA^TARO");
-        query = MongoUtil.madeQueryOR(query, MongoUtil.madeQueryIsValue("PatientName", "TOSHIBA^TARO"));
-        resultDBobjs = MongoUtil.processQuery(collection, query);
-        MongoUtil.printResult(resultDBobjs);
+        Settings settings = null;
+        try{
+            settings = new Settings(new File(pathConfigFile));
+        }catch(IOException e){
+            System.out.println("Error while opening the configuration file\n"+e.getMessage());
+        }
+        MongoPlugin plugin = new MongoPlugin(settings);
+        plugin.enable();
+        Iterable<SearchResult> res = plugin.query(QUERY, (Object[]) null);
+        Iterator<SearchResult> it = res.iterator();
+        while(it.hasNext())
+            System.out.println(it.next().toString());
+        plugin.disable();
     }
-
+    
     private static void initData(DBCollection collection) {
         BasicDBObject document = new BasicDBObject();
         document.put("AcquisitionDate", 19970205);

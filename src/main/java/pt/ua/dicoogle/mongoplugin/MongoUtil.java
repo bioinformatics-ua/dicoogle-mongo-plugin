@@ -18,11 +18,11 @@ import pt.ua.dicoogle.sdk.datastructs.SearchResult;
  */
 public class MongoUtil {
     
-    public static List<SearchResult> getListFromResult(DBObject[] dbObjs, URI location, float score){
+    public static List<SearchResult> getListFromResult(List<DBObject> dbObjs, URI location, float score){
         ArrayList<SearchResult> result = new ArrayList<SearchResult>();
-        for(int i=0; i<dbObjs.length;i++){
+        for(int i=0; i<dbObjs.size();i++){
             SearchResult searchResult;
-            searchResult = new SearchResult(location, score, (HashMap<String,Object>)dbObjs[i].toMap());
+            searchResult = new SearchResult(location, score, (HashMap<String,Object>)dbObjs.get(i).toMap());
             result.add(searchResult);
         }
         return result;

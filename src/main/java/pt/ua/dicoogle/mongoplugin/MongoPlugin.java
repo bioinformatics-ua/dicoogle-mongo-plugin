@@ -4,7 +4,6 @@
  */
 package pt.ua.dicoogle.mongoplugin;
 
-import com.mongodb.BasicDBObject;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -15,8 +14,13 @@ import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoException;
-import org.bson.types.ObjectId;
+import com.mongodb.gridfs.GridFS;
+import com.mongodb.gridfs.GridFSInputFile;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 import org.dcm4che2.data.DicomObject;
+import org.dcm4che2.data.Tag;
 import org.dcm4che2.io.DicomInputStream;
 import pt.ua.dicoogle.sdk.QueryInterface;
 import pt.ua.dicoogle.sdk.StorageInputStream;
@@ -31,7 +35,7 @@ public class MongoPlugin implements QueryInterface, StorageInterface {
 
     private String host,dbName="DICOMtest",collectionName="DICOMdata";
     private int port;
-    private static MongoClient mongoClient = null;
+    protected static MongoClient mongoClient = null;
     private DB db;
     private DBCollection collection = null;
     private boolean isEnable = false;
@@ -53,7 +57,7 @@ public class MongoPlugin implements QueryInterface, StorageInterface {
             return null;
         }
         MongoQuery mongoQuery = new MongoQuery(query);
-        DBObject[] resultDBobjs = mongoQuery.processQuery(collection);
+        List<DBObject> resultDBobjs = mongoQuery.processQuery(collection);
         result = MongoUtil.getListFromResult(resultDBobjs, location, (float) 0.0);
         return result;
     }
@@ -76,7 +80,7 @@ public class MongoPlugin implements QueryInterface, StorageInterface {
         db = mongoClient.getDB(dbName);
         collection = db.getCollection(collectionName);
         try {
-            location = new URI(this.getName()+"://" + host + ":" + port + "/"+dbName+"/"+collectionName);
+            location = new URI(this.getName()+"://" + host + ":" + port + "/"+dbName);
         } catch (URISyntaxException e) {
             return false;
         }
@@ -112,7 +116,7 @@ public class MongoPlugin implements QueryInterface, StorageInterface {
 
     @Override
     public String getScheme(){
-        return this.getName()+"://host:port/dataBaseName/collectionName/uid";
+        return this.getName()+"://host:port/dataBaseName/UUIDfileName";
     }
     
     @Override
@@ -126,16 +130,24 @@ public class MongoPlugin implements QueryInterface, StorageInterface {
         MongoURI uri = new MongoURI(location);
         if(!uri.verify())
             return null;
-        return null;
+        ArrayList<StorageInputStream> list = new ArrayList<StorageInputStream>();
+        list.add(new MongoStorageInputStream(location));
+        return list;
     }
     
+    // Just to test
     public URI store(String str){
-        BasicDBObject document = new BasicDBObject("DicomObject", str);
-        collection.insert(document);
-        ObjectId id = (ObjectId)document.get("_id");
+        if(!isEnable)
+            return null;
+        GridFS saveFs = new GridFS(this.db);
+        String fileName = UUID.randomUUID().toString();
+        byte[] pixelData = str.getBytes();
+        GridFSInputFile ins = saveFs.createFile(pixelData);
+        ins.setFilename(fileName);
+        ins.save();
         URI uri = null;
         try{
-            uri = new URI(this.getLocation()+"/"+id);
+            uri = new URI(this.getLocation()+"/"+fileName);
         }catch(URISyntaxException e){
         }
         return uri;
@@ -145,12 +157,53 @@ public class MongoPlugin implements QueryInterface, StorageInterface {
     public URI store(DicomObject dicomObject){
         if(!isEnable)
             return null;
-        BasicDBObject document = new BasicDBObject("DicomObject", dicomObject);
-        collection.insert(document);
-        ObjectId id = (ObjectId)document.get("_id");
+        GridFS saveFs = new GridFS(this.db);
+        String fileName = UUID.randomUUID().toString();
+        GridFSInputFile ins = saveFs.createFile();
+        ins.setFilename(fileName);
+        //Patient
+        ins.put("PatientName", dicomObject.getBytes(Tag.PatientName));
+        ins.put("PatienID", dicomObject.getBytes(Tag.PatientID));
+        ins.put("PatientBirthDate", dicomObject.getBytes(Tag.PatientBirthDate));
+        ins.put("PatientSex", dicomObject.getBytes(Tag.PatientSex));
+        //Study
+        ins.put("StudyInstanceUID", dicomObject.getBytes(Tag.StudyInstanceUID));
+        ins.put("StudyDate", dicomObject.getBytes(Tag.StudyDate));
+        ins.put("StudyTime", dicomObject.getBytes(Tag.StudyTime));
+        ins.put("StudyID", dicomObject.getBytes(Tag.StudyID));
+        ins.put("ReferringPhysicianName", dicomObject.getBytes(Tag.ReferringPhysicianName));
+        ins.put("AccessionNumber", dicomObject.getBytes(Tag.AccessionNumber));
+        //Series
+        ins.put("SeriesInstanceUID", dicomObject.getBytes(Tag.SeriesInstanceUID));
+        ins.put("SeriesNumber", dicomObject.getBytes(Tag.SeriesNumber));
+        ins.put("ModalityLUTType", dicomObject.getBytes(Tag.ModalityLUTType));
+        //Equipment
+        ins.put("Manufacturer", dicomObject.getBytes(Tag.Manufacturer));
+        ins.put("InstitutionName", dicomObject.getBytes(Tag.InstitutionName));
+        // Image data
+        // Acquisition Attributes
+        ins.put("AccessionNumber", dicomObject.getBytes(Tag.AccessionNumber));
+        ins.put("AcquisitionDate", dicomObject.getBytes(Tag.AcquisitionDate));
+        ins.put("AcquisitionNumber", dicomObject.getBytes(Tag.AcquisitionNumber));
+        ins.put("AcquisitionTime", dicomObject.getBytes(Tag.AcquisitionTime));
+        ins.put("ImageNumber", dicomObject.getBytes(Tag.ImageBoxNumber));
+        ins.put("ImageType", dicomObject.getBytes(Tag.ImageType));
+        ins.put("BitsAllocated", dicomObject.getBytes(Tag.BitsAllocated));
+        ins.put("BitsStored", dicomObject.getBytes(Tag.BitsStored));
+        ins.put("HighBit", dicomObject.getBytes(Tag.HighBit));
+        ins.put("Rows", dicomObject.getBytes(Tag.Rows));
+        ins.put("Columns", dicomObject.getBytes(Tag.Columns));
+        ins.put("SamplesPerPixel", dicomObject.getBytes(Tag.SamplesPerPixel));
+        ins.put("PlanarConfiguration", dicomObject.getBytes(Tag.PlanarConfiguration));
+        ins.put("PixelRepresentation", dicomObject.getBytes(Tag.PixelRepresentation));
+        ins.put("PhotometricInterpretation", dicomObject.getBytes(Tag.PhotometricInterpretation));
+        ins.put("PixelData", dicomObject.getBytes(Tag.PixelData));
+        ins.put("WindowWidth", dicomObject.getBytes(Tag.WindowWidth));
+        ins.put("WindowCenter", dicomObject.getBytes(Tag.WindowCenter));
+        ins.save();
         URI uri = null;
         try{
-            uri = new URI(this.getLocation()+"/"+id);
+            uri = new URI(this.getLocation()+"/"+fileName);
         }catch(URISyntaxException e){
         }
         return uri;
@@ -158,15 +211,9 @@ public class MongoPlugin implements QueryInterface, StorageInterface {
     
     @Override
     public URI store(DicomInputStream inputStream) throws IOException{
-        BasicDBObject document = new BasicDBObject("DicomObject", inputStream.getDicomObject());
-        collection.insert(document);
-        ObjectId id = (ObjectId)document.get("_id");
-        URI uri = null;
-        try{
-            uri = new URI(this.getLocation()+"/"+id);
-        }catch(URISyntaxException e){
-        }
-        return uri;
+        if(!isEnable)
+            return null;
+        return this.store(inputStream.getDicomObject());
     }
     
     @Override
@@ -175,12 +222,9 @@ public class MongoPlugin implements QueryInterface, StorageInterface {
         if(!uri.verify())
             return;
         uri.getInformation();
-        DB db = mongoClient.getDB(uri.getDBName());
-        DBCollection collection = db.getCollection(uri.getCollectionName());
-        ObjectId id = new ObjectId(uri.getUID());
-        BasicDBObject doc = new BasicDBObject();
-        doc.put("_id", id);
-        collection.remove(doc);
+        DB dbTemp = mongoClient.getDB(uri.getDBName());
+        GridFS removeFS = new GridFS(dbTemp);
+        removeFS.remove(uri.getFileName());
     }
     
     private void parseSettings(){

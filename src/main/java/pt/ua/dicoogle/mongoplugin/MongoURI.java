@@ -4,8 +4,6 @@
  */
 package pt.ua.dicoogle.mongoplugin;
 
-import com.mongodb.DB;
-import com.mongodb.DBCollection;
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -17,7 +15,7 @@ public class MongoURI {
 
     private URI uri;
     private String dbName;
-    private String colletionName;
+    private String fileName;
     private String uID;
 
     public MongoURI(String uri) {
@@ -55,18 +53,9 @@ public class MongoURI {
                 str += currentChar;
             }
         }
-        colletionName = str;
-        str = "";
-        while (i < path.length()) {
-            currentChar = path.charAt(i);
-            i++;
-            if (currentChar != '/') {
-                str += currentChar;
-            }
-        }
-        uID = str;
+        fileName = str;
     }
-//"://host:port/dataBaseName/collectionName"
+    
     public boolean verify() {
         String uri = this.uri.toString();
         String str = "";
@@ -123,8 +112,6 @@ public class MongoURI {
         }
         if(i==0)
             return false;
-        if(cmp >= uri.length())
-            return false;
         return true;
     }
 
@@ -132,8 +119,8 @@ public class MongoURI {
         return dbName;
     }
 
-    public String getCollectionName() {
-        return colletionName;
+    public String getFileName() {
+        return fileName;
     }
 
     public String getUID() {
