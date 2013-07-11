@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Config>
-	<DefaultServerHost>localhost</DefaultServerHost>
-	<DefaultServerPort>27017</DefaultServerPort>
-	<DefaultDataBase>DICOMtest</DefaultDataBase>
-	<DefaultCollection>DICOMdata</DefaultCollection>
-</Config>
