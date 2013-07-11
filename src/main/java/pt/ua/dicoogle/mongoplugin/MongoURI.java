@@ -31,11 +31,12 @@ public class MongoURI {
     }
 
     public void getInformation() {
+        if(!this.verify())
+            return;
         String path = uri.getPath();
         String str = "";
         int i = 1;
         char currentChar = 0;
-        System.out.println(path);
         while (currentChar != '/') {
             currentChar = path.charAt(i);
             i++;

@@ -4,7 +4,9 @@
  */
 package pt.ua.dicoogle.mongoplugin;
 
+import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
+import com.mongodb.BasicDBObjectBuilder;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -13,16 +15,23 @@ import java.util.Scanner;
 import java.util.Hashtable;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
+import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoException;
 import com.mongodb.gridfs.GridFS;
 import com.mongodb.gridfs.GridFSDBFile;
 import com.mongodb.gridfs.GridFSInputFile;
+import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import org.dcm4che2.data.ElementDictionary;
+import org.dcm4che2.data.DicomElement;
 import org.dcm4che2.data.DicomObject;
+import org.dcm4che2.data.SpecificCharacterSet;
 import org.dcm4che2.data.Tag;
 import org.dcm4che2.io.DicomInputStream;
 import pt.ua.dicoogle.sdk.QueryInterface;
@@ -38,11 +47,10 @@ import pt.ua.dicoogle.sdk.Utils.DictionaryAccess;
  */
 public class MongoPlugin implements QueryInterface, StorageInterface {
 
-    private String host, dbName = "DICOMtest", collectionName = "DICOMdata";
+    private String host, dbName = "DICOMtest";
     private int port;
     protected static MongoClient mongoClient = null;
     private DB db;
-    private DBCollection collection = null;
     private boolean isEnable = false;
     private Settings settings;
     private URI location;
@@ -58,7 +66,7 @@ public class MongoPlugin implements QueryInterface, StorageInterface {
     @Override
     public Iterable<SearchResult> query(String query, Object... parameters) {
         Iterable<SearchResult> result;
-        if (collection == null) {
+        if (!isEnable || mongoClient == null) {
             return null;
         }
         MongoQuery mongoQuery = new MongoQuery(query);
@@ -84,16 +92,33 @@ public class MongoPlugin implements QueryInterface, StorageInterface {
             return false;
         }
         db = mongoClient.getDB(dbName);
-        collection = db.getCollection(collectionName);
         try {
-            location = new URI(this.getName() + "://" + host + ":" + port + "/" + dbName);
+            location = new URI(this.getName() + "://" + host + ":" + port + "/" + dbName + "/");
         } catch (URISyntaxException e) {
             return false;
         }
         if (mongoClient != null) {
             isEnable = true;
         }
-        //this.remove(this.store("test"));
+        /*try {
+            DicomInputStream inputStream = new DicomInputStream(new File("D:\\Louis\\Desktop\\Dicoogle\\DICOM_Images\\1.dcm"));
+            this.remove(this.store(inputStream));
+            inputStream = new DicomInputStream(new File("D:\\Louis\\Desktop\\Dicoogle\\DICOM_Images\\2.dcm"));
+            this.remove(this.store(inputStream));
+            inputStream = new DicomInputStream(new File("D:\\Louis\\Desktop\\Dicoogle\\DICOM_Images\\3.dcm"));
+            this.remove(this.store(inputStream));
+            inputStream = new DicomInputStream(new File("D:\\Louis\\Desktop\\Dicoogle\\DICOM_Images\\4.dcm"));
+            this.remove(this.store(inputStream));
+            inputStream = new DicomInputStream(new File("D:\\Louis\\Desktop\\Dicoogle\\DICOM_Images\\5.dcm"));
+            this.remove(this.store(inputStream));
+            inputStream = new DicomInputStream(new File("D:\\Louis\\Desktop\\Dicoogle\\DICOM_Images\\6.dcm"));
+            this.remove(this.store(inputStream));
+            inputStream = new DicomInputStream(new File("D:\\Louis\\Desktop\\Dicoogle\\DICOM_Images\\7.dcm"));
+            this.remove(this.store(inputStream));
+            inputStream = new DicomInputStream(new File("D:\\Louis\\Desktop\\Dicoogle\\DICOM_Images\\8.dcm"));
+            this.remove(this.store(inputStream));
+        } catch (IOException e) {
+        }*/
         return isEnable;
     }
 
@@ -142,25 +167,6 @@ public class MongoPlugin implements QueryInterface, StorageInterface {
         return list;
     }
 
-    // Just to test
-    public URI store(String str) {
-        if (!isEnable || mongoClient == null) {
-            return null;
-        }
-        GridFS saveFs = new GridFS(this.db);
-        String fileName = UUID.randomUUID().toString();
-        GridFSInputFile ins = saveFs.createFile((this.getLocation() + "/" + fileName).getBytes());
-        ins.setFilename(fileName);
-        ins.setMetaData(new BasicDBObject("str", str));
-        ins.save();
-        URI uri = null;
-        try {
-            uri = new URI(this.getLocation() + "/" + fileName);
-        } catch (URISyntaxException e) {
-        }
-        return uri;
-    }
-
     @Override
     public URI store(DicomObject dicomObject) {
         if (!isEnable || mongoClient == null) {
@@ -168,20 +174,54 @@ public class MongoPlugin implements QueryInterface, StorageInterface {
         }
         GridFS saveFs = new GridFS(this.db);
         String fileName = UUID.randomUUID().toString();
-        GridFSInputFile ins = saveFs.createFile();
-        ins.setFilename(fileName);
-        DictionaryAccess dictionary = DictionaryAccess.getInstance();
-        Hashtable<String, Integer> hTable = dictionary.getTagList();
+        DictionaryAccess instance = DictionaryAccess.getInstance();
+        Hashtable<String, Integer> hTable = instance.getTagList();
         Iterator<String> it = hTable.keySet().iterator();
-        while(it.hasNext()){
+        Map<String, Object> docMap = new HashMap<String, Object>();
+        while (it.hasNext()) {
             String key = it.next();
-            ins.setMetaData(new BasicDBObject(key, dicomObject.getBytes(hTable.get(key))));
+            DicomElement dicomElt = dicomObject.get(hTable.get(key));
+            Object obj = null;
+            if (dicomElt != null) {
+                if (!key.equals("PixelData")) {
+                    String str = null;
+                    if (dicomElt.hasDicomObjects()) {
+                        int nbItems = dicomElt.countItems();
+                        HashMap<String, Object> map = new HashMap<String, Object>();
+                        for (int i = 0; i < nbItems; i++) {
+                            DicomObject dicomObj = dicomElt.getDicomObject(i);
+                            Iterator<DicomElement> itTemp = dicomObj.iterator();
+                            while (itTemp.hasNext()) {
+                                DicomElement dicomEltTemp = itTemp.next();
+                                map.put(instance.tagName(dicomEltTemp.tag()), dicomEltTemp.getValueAsString(dicomObject.getSpecificCharacterSet(), 0));
+                            }
+                        }
+                        obj = map;
+                    } else {
+                        str = dicomElt.getValueAsString(dicomObject.getSpecificCharacterSet(), 0);
+                        if (str != null) {
+                            try {
+                                obj = Double.parseDouble(str);
+                            } catch (NumberFormatException e) {
+                                obj = str;
+                            }
+                        }
+                    }
+                    docMap.put(key, obj);
+                }
+                else
+                    docMap.put(key, dicomElt.getBytes());
+            }
         }
+        GridFSInputFile ins = saveFs.createFile((this.getLocation() + fileName).getBytes());
+        ins.setFilename(fileName);
+        ins.setMetaData(new BasicDBObject(docMap));
         ins.save();
-        URI uri = null;
+        URI uri;
         try {
-            uri = new URI(this.getLocation() + "/" + fileName);
+            uri = new URI(this.getLocation() + fileName);
         } catch (URISyntaxException e) {
+            return null;
         }
         return uri;
     }
@@ -257,20 +297,6 @@ public class MongoPlugin implements QueryInterface, StorageInterface {
                     }
                 }
             }
-            if (str.contains("<DefaultCollection>") && str.contains("</DefaultCollection>")) {
-                while (currentChar != '>') {
-                    currentChar = str.charAt(i);
-                    i++;
-                }
-                collectionName = "";
-                while (currentChar != '<') {
-                    currentChar = str.charAt(i);
-                    i++;
-                    if (currentChar != '<') {
-                        collectionName += currentChar;
-                    }
-                }
-            }
         }
     }
 
@@ -284,10 +310,6 @@ public class MongoPlugin implements QueryInterface, StorageInterface {
 
     public void setDbName(String name) {
         this.dbName = name;
-    }
-
-    public void setCollectionName(String name) {
-        this.collectionName = name;
     }
 
     public void setHost(String host) {

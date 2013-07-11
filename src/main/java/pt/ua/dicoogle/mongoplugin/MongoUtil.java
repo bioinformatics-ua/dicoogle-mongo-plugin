@@ -11,7 +11,6 @@ import com.mongodb.DBObject;
 import com.mongodb.gridfs.GridFSDBFile;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Map;
 import pt.ua.dicoogle.sdk.datastructs.SearchResult;
 
 /**
@@ -20,15 +19,6 @@ import pt.ua.dicoogle.sdk.datastructs.SearchResult;
  */
 public class MongoUtil {
 
-    /*public static List<SearchResult> getListFromResult(List<DBObject> dbObjs, URI location, float score){
-     ArrayList<SearchResult> result = new ArrayList<SearchResult>();
-     for(int i=0; i<dbObjs.size();i++){
-     SearchResult searchResult;
-     searchResult = new SearchResult(location, score, (HashMap<String,Object>)dbObjs.get(i).toMap());
-     result.add(searchResult);
-     }
-     return result;
-     }*/
     public static List<SearchResult> getListFromResult(List<GridFSDBFile> dbObjs, URI location, float score) {
         ArrayList<SearchResult> result = new ArrayList<SearchResult>();
         for (int i = 0; i < dbObjs.size(); i++) {
@@ -121,7 +111,7 @@ public class MongoUtil {
     public static BasicDBObject parseStringToQuery(String strQuery) {
         BasicDBObject query = null;
         String str = "";
-        char currentChar = 0;
+        char currentChar;
         int cmp = 0, length, nbParOpen = 0, nbBrackets = 0;
         boolean and = false, or = false, isBlank = true;
         if (strQuery == null || strQuery.equalsIgnoreCase("")) {
