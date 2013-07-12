@@ -4,34 +4,27 @@
  */
 package pt.ua.dicoogle.mongoplugin;
 
-import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
-import com.mongodb.BasicDBObjectBuilder;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.Scanner;
-import java.util.Hashtable;
 import com.mongodb.DB;
-import com.mongodb.DBCollection;
-import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoException;
 import com.mongodb.gridfs.GridFS;
 import com.mongodb.gridfs.GridFSDBFile;
 import com.mongodb.gridfs.GridFSInputFile;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import org.dcm4che2.data.ElementDictionary;
 import org.dcm4che2.data.DicomElement;
 import org.dcm4che2.data.DicomObject;
-import org.dcm4che2.data.SpecificCharacterSet;
 import org.dcm4che2.data.Tag;
 import org.dcm4che2.io.DicomInputStream;
 import pt.ua.dicoogle.sdk.QueryInterface;
@@ -47,7 +40,7 @@ import pt.ua.dicoogle.sdk.Utils.DictionaryAccess;
  */
 public class MongoPlugin implements QueryInterface, StorageInterface {
 
-    private String host, dbName = "DICOMtest";
+    private String host, dbName;
     private int port;
     protected static MongoClient mongoClient = null;
     private DB db;
@@ -100,25 +93,6 @@ public class MongoPlugin implements QueryInterface, StorageInterface {
         if (mongoClient != null) {
             isEnable = true;
         }
-        /*try {
-            DicomInputStream inputStream = new DicomInputStream(new File("D:\\Louis\\Desktop\\Dicoogle\\DICOM_Images\\1.dcm"));
-            this.remove(this.store(inputStream));
-            inputStream = new DicomInputStream(new File("D:\\Louis\\Desktop\\Dicoogle\\DICOM_Images\\2.dcm"));
-            this.remove(this.store(inputStream));
-            inputStream = new DicomInputStream(new File("D:\\Louis\\Desktop\\Dicoogle\\DICOM_Images\\3.dcm"));
-            this.remove(this.store(inputStream));
-            inputStream = new DicomInputStream(new File("D:\\Louis\\Desktop\\Dicoogle\\DICOM_Images\\4.dcm"));
-            this.remove(this.store(inputStream));
-            inputStream = new DicomInputStream(new File("D:\\Louis\\Desktop\\Dicoogle\\DICOM_Images\\5.dcm"));
-            this.remove(this.store(inputStream));
-            inputStream = new DicomInputStream(new File("D:\\Louis\\Desktop\\Dicoogle\\DICOM_Images\\6.dcm"));
-            this.remove(this.store(inputStream));
-            inputStream = new DicomInputStream(new File("D:\\Louis\\Desktop\\Dicoogle\\DICOM_Images\\7.dcm"));
-            this.remove(this.store(inputStream));
-            inputStream = new DicomInputStream(new File("D:\\Louis\\Desktop\\Dicoogle\\DICOM_Images\\8.dcm"));
-            this.remove(this.store(inputStream));
-        } catch (IOException e) {
-        }*/
         return isEnable;
     }
 
@@ -183,8 +157,8 @@ public class MongoPlugin implements QueryInterface, StorageInterface {
             DicomElement dicomElt = dicomObject.get(hTable.get(key));
             Object obj = null;
             if (dicomElt != null) {
-                if (!key.equals("PixelData")) {
-                    String str = null;
+                if (!key.equals(instance.tagName(Tag.PixelData))) {
+                    String str;
                     if (dicomElt.hasDicomObjects()) {
                         int nbItems = dicomElt.countItems();
                         HashMap<String, Object> map = new HashMap<String, Object>();
@@ -209,13 +183,12 @@ public class MongoPlugin implements QueryInterface, StorageInterface {
                     }
                     docMap.put(key, obj);
                 }
-                else
-                    docMap.put(key, dicomElt.getBytes());
             }
         }
         GridFSInputFile ins = saveFs.createFile((this.getLocation() + fileName).getBytes());
         ins.setFilename(fileName);
         ins.setMetaData(new BasicDBObject(docMap));
+        ins.put(instance.tagName(Tag.PixelData), dicomObject.getBytes(Tag.PixelData));
         ins.save();
         URI uri;
         try {

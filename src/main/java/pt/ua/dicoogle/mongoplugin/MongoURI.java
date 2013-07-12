@@ -60,7 +60,7 @@ public class MongoURI {
     public boolean verify() {
         String uri = this.uri.toString();
         String str = "";
-        int cmp = 0, i = 0, nbSlash = 0;
+        int cmp = 0, i = 0;
         char currentChar = 0;
         while (currentChar != ':' && cmp < uri.length()) {
             currentChar = uri.charAt(cmp);

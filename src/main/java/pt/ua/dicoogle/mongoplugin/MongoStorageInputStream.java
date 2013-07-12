@@ -11,7 +11,6 @@ import java.io.InputStream;
 import java.net.URI;
 import pt.ua.dicoogle.sdk.StorageInputStream;
 import com.mongodb.io.ByteBufferInputStream;
-import java.io.FileInputStream;
 
 /**
  *

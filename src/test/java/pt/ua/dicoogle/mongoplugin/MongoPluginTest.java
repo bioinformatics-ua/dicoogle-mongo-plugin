@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Iterator;
 import org.dcm4che2.data.DicomObject;
 import org.dcm4che2.io.DicomInputStream;
@@ -61,7 +62,7 @@ public class MongoPluginTest {
     @Test
     public void testQuery() {
         System.out.println("query");
-        String query = "AcquisitionDate:[19960227 TO 19980205]";
+        String query = "SOPInstanceUID:[1.3.6.1.4.1.9328.50.4.207 TO 1.3.6.1.4.1.9328.50.4.230]";
         Object[] parameters = null;
         Object result = instance.query(query, parameters);
         Assert.assertThat(result, IsNull.notNullValue());
@@ -95,11 +96,7 @@ public class MongoPluginTest {
         boolean result = instance.disable();
         assertEquals(result, true);
     }
-
-    /**
-     * Test of at method, of class MongoPlugin.
-     */
-    @Test
+    
     public void testAt() throws URISyntaxException, IOException {
         System.out.println("at");
         URI location = new URI(instance.getLocation() + "07aea52b-5dfb-4c78-8a65-79ec8e51b198");
@@ -116,19 +113,47 @@ public class MongoPluginTest {
         }
     }
 
+    private static ArrayList<String> retrieveFileList(File file, int level) {
+        ArrayList<String> fileList = new ArrayList<String>();
+        ArrayList<String> fileList2;
+        for (File f : file.listFiles()) {
+            if (f.isDirectory()) {
+                fileList2 = retrieveFileList(f, level + 1);
+                for (int i = 0; i < fileList2.size(); i++) {
+                    fileList.add(fileList2.get(i));
+                }
+            } else {
+                if (f.getAbsolutePath().contains(".dcm")) {
+                    fileList.add(f.getAbsolutePath());
+                }
+            }
+        }
+        return fileList;
+    }
+
     /**
      * Test of store method, of class MongoPlugin.
      */
     @Test
     public void testStore_DicomObject() throws IOException {
-        System.out.println("store");
-        DicomInputStream din = new DicomInputStream(new File("D:\\Louis\\Desktop\\Dicoogle\\DICOM_Images\\1.dcm"));
-        DicomObject dcmObj = din.readDicomObject();
-        URI result = instance.store(dcmObj);
-        Assert.assertThat(result, IsNull.notNullValue());
-        boolean b = instance.handles((URI) result);
-        assertEquals(b, true);
-        instance.remove((URI)result);
+        ArrayList<String> fileList = retrieveFileList(new File("D:\\DICOM_data\\DATA\\"), 0);
+        //int borne = fileList.size();
+        int borne = 100;
+        for (int i = 0; i < borne; i++) {
+            URI result = null;
+            try {
+                DicomInputStream inputStream = new DicomInputStream(new File(fileList.get(i)));
+                DicomObject dcmObj = inputStream.readDicomObject();
+                System.out.println("Store  from " + fileList.get(i) + " - " + (i + 1) + "th file");
+                result = instance.store(dcmObj);
+            } catch (IOException e) {
+            }
+            Assert.assertThat(result, IsNull.notNullValue());
+            boolean b = instance.handles((URI) result);
+            assertEquals(b, true);
+            /*System.out.println("Remove to   " + result);
+            instance.remove(result);*/
+        }
     }
 
     /**
@@ -136,12 +161,22 @@ public class MongoPluginTest {
      */
     @Test
     public void testStore_DicomInputStream() throws Exception {
-        System.out.println("store");
-        DicomInputStream inputStream = new DicomInputStream(new File("D:\\Louis\\Desktop\\Dicoogle\\DICOM_Images\\1.dcm"));
-        Object result = instance.store(inputStream);
-        Assert.assertThat(result, IsNull.notNullValue());
-        Assert.assertThat(result, IsInstanceOf.instanceOf(URI.class));
-        boolean b = instance.handles((URI) result);
-        assertEquals(b, true);
+        ArrayList<String> fileList = retrieveFileList(new File("D:\\DICOM_data\\DATA\\"), 0);
+        //int borne = fileList.size();
+        int borne = 100;
+        for (int i = 0; i < borne; i++) {
+            URI result = null;
+            try {
+                DicomInputStream inputStream = new DicomInputStream(new File(fileList.get(i)));
+                //System.out.println("Store  from " + fileList.get(i) + " - " + (i + 1) + "th file");
+                result = instance.store(inputStream);
+            } catch (IOException e) {
+            }
+            Assert.assertThat(result, IsNull.notNullValue());
+            boolean b = instance.handles((URI) result);
+            assertEquals(b, true);
+            //System.out.println("Remove to   " + tempURI);
+            instance.remove(result);
+        }
     }
 }

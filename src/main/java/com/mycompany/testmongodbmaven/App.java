@@ -19,10 +19,17 @@ import pt.ua.dicoogle.sdk.settings.Settings;
 public class App{
 
     //private static String QUERY = "(AcquisitionDate:[19960227 TO 19970205] AND (Columns:[500.0 TO 600.0] OR Columns:396.0)) OR (PatientName:TOSHIBA AND BitsAllocated:16.0) AND NOT InstitutionName:kodak";
-    private static String QUERY = "AcquisitionDate:[19960227 TO 19980205]";
-    private static String pathConfigFile = ".\\settings\\mongoplugin.xml";
-    
+    private static String pathConfigFile;
+    private static String QUERY;
     public static void main(String[] args) {
+        if(!retrieveArg(args)){
+            System.out.println("---------HELP----------");
+            System.out.println("You have to set the query and the path of the configuration file");
+            System.out.println("-q [QUERY] - set the query");
+            System.out.println("-c [pathConfigurationFile] - set configuration file");
+            System.out.println("EXEMPLE : MongoPlugin.java -q BitsStored:12 AND FilterType:0 -c .\\settings\\mongoplugin.xml");
+            return;
+        }
         Settings settings = null;
         try{
             settings = new Settings(new File(pathConfigFile));
@@ -33,11 +40,40 @@ public class App{
         plugin.enable();
         Iterable<SearchResult> res = plugin.query(QUERY, (Object[]) null);
         Iterator<SearchResult> it = res.iterator();
-        while(it.hasNext())
+        int cmp = 0;
+        while(it.hasNext()){
             System.out.println(it.next().getExtraData().toString());
+            cmp++;
+        }
         plugin.disable();
+        System.err.println("Number of result : " + cmp);
     }
 
+    private static boolean retrieveArg(String[] args){
+        boolean query = false, path = false;
+        if(args.length == 0)
+            return false;
+        QUERY = "";
+        pathConfigFile = "";
+        for(int i=0; i<args.length; i++){
+            if(args[i].equals("-q")){
+                query = true;
+                path = false;
+            }
+            if(args[i].equals("-c")){
+                query = false;
+                path = true;
+            }
+            if(query && !args[i].equals("-q"))
+                QUERY += (" " + args[i]);
+            if(path && !args[i].equals("-c"))
+                pathConfigFile += (args[i]);
+        }
+        if(QUERY.length() == 0 || pathConfigFile.length() == 0)
+            return false;
+        return true;
+    }
+    
     public static int[] getByteArrayFromFile(File file) {
         long taille = file.length();
         BufferedInputStream bis;
