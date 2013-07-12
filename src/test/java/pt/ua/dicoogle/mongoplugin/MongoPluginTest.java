@@ -97,9 +97,9 @@ public class MongoPluginTest {
         assertEquals(result, true);
     }
     
-    public void testAt() throws URISyntaxException, IOException {
+    public void testAt(URI uri) throws URISyntaxException, IOException {
         System.out.println("at");
-        URI location = new URI(instance.getLocation() + "07aea52b-5dfb-4c78-8a65-79ec8e51b198");
+        URI location = uri;
         Object result = instance.at(location);
         Assert.assertThat(result, IsNull.notNullValue());
         Assert.assertThat(result, IsInstanceOf.instanceOf(Iterable.class));
@@ -151,8 +151,10 @@ public class MongoPluginTest {
             Assert.assertThat(result, IsNull.notNullValue());
             boolean b = instance.handles((URI) result);
             assertEquals(b, true);
-            /*System.out.println("Remove to   " + result);
-            instance.remove(result);*/
+            if(b)
+                instance.at(result);
+            System.out.println("Remove to   " + result);
+            instance.remove(result);
         }
     }
 
@@ -168,14 +170,16 @@ public class MongoPluginTest {
             URI result = null;
             try {
                 DicomInputStream inputStream = new DicomInputStream(new File(fileList.get(i)));
-                //System.out.println("Store  from " + fileList.get(i) + " - " + (i + 1) + "th file");
+                System.out.println("Store  from " + fileList.get(i) + " - " + (i + 1) + "th file");
                 result = instance.store(inputStream);
             } catch (IOException e) {
             }
             Assert.assertThat(result, IsNull.notNullValue());
             boolean b = instance.handles((URI) result);
             assertEquals(b, true);
-            //System.out.println("Remove to   " + tempURI);
+            if(b)
+                instance.at(result);
+            System.out.println("Remove to   " + result);
             instance.remove(result);
         }
     }
