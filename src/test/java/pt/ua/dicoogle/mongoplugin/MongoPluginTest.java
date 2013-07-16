@@ -10,6 +10,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
+import org.apache.commons.configuration.ConfigurationException;
 import org.dcm4che2.data.DicomObject;
 import org.dcm4che2.io.DicomInputStream;
 import org.hamcrest.core.IsInstanceOf;
@@ -23,8 +25,11 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import pt.ua.dicoogle.sdk.StorageInputStream;
+import pt.ua.dicoogle.sdk.StorageInterface;
+import pt.ua.dicoogle.sdk.datastructs.Report;
 import pt.ua.dicoogle.sdk.datastructs.SearchResult;
-import pt.ua.dicoogle.sdk.settings.Settings;
+import pt.ua.dicoogle.sdk.settings.ConfigurationHolder;
+import pt.ua.dicoogle.sdk.task.Task;
 
 /**
  *
@@ -39,9 +44,15 @@ public class MongoPluginTest {
 
     @BeforeClass
     public static void setUpClass() throws IOException {
-        Settings settings = new Settings(new File(".\\settings\\mongoplugin.xml"));
-        instance = new MongoPlugin(settings);
-        instance.enable();
+        instance = new MongoPlugin();
+        ConfigurationHolder settings = null;
+        String pathConfigFile = ".\\settings\\mongoplugin.xml";
+        try{
+            settings = new ConfigurationHolder(new File(pathConfigFile));
+        }catch(ConfigurationException e){
+            System.out.println("Error while opening the configuration file\n"+e.getMessage());
+        }
+        instance.setSettings(settings);
     }
 
     @AfterClass
@@ -64,7 +75,7 @@ public class MongoPluginTest {
         System.out.println("query");
         String query = "SOPInstanceUID:[1.3.6.1.4.1.9328.50.4.207 TO 1.3.6.1.4.1.9328.50.4.230]";
         Object[] parameters = null;
-        Object result = instance.query(query, parameters);
+        Object result = instance.getQueryPlugins().get(0).query(query, parameters);
         Assert.assertThat(result, IsNull.notNullValue());
         Assert.assertThat(result, IsInstanceOf.instanceOf(Iterable.class));
         Iterator<Object> it = ((Iterable) result).iterator();
@@ -76,31 +87,12 @@ public class MongoPluginTest {
         }
         Assert.assertThat(i, IsNot.not(0));
     }
-
-    /**
-     * Test of enable method, of class MongoPlugin.
-     */
-    @Test
-    public void testEnable() {
-        System.out.println("enable");
-        boolean result = instance.enable();
-        assertEquals(result, true);
-    }
-
-    /**
-     * Test of disable method, of class MongoPlugin.
-     */
-    @Test
-    public void testDisable() {
-        System.out.println("disable");
-        boolean result = instance.disable();
-        assertEquals(result, true);
-    }
     
     public void testAt(URI uri) throws URISyntaxException, IOException {
         System.out.println("at");
         URI location = uri;
-        Object result = instance.at(location);
+        List<StorageInterface> list = (List<StorageInterface>) instance.getStoragePlugins();
+        Object result = list.get(0).at(location);
         Assert.assertThat(result, IsNull.notNullValue());
         Assert.assertThat(result, IsInstanceOf.instanceOf(Iterable.class));
         Iterator<Object> it = ((Iterable) result).iterator();
@@ -137,24 +129,43 @@ public class MongoPluginTest {
     @Test
     public void testStore_DicomObject() throws IOException {
         ArrayList<String> fileList = retrieveFileList(new File("D:\\DICOM_data\\DATA\\"), 0);
+        //ArrayList<String> fileList = retrieveFileList(new File("D:\\DICOM_data\\DICOM_Images"), 0);
         //int borne = fileList.size();
-        int borne = 100;
+        int borne = 1;
+        System.out.println("Store "+borne+" files");
+        List<StorageInterface> list = (List<StorageInterface>) instance.getStoragePlugins();
         for (int i = 0; i < borne; i++) {
             URI result = null;
             try {
                 DicomInputStream inputStream = new DicomInputStream(new File(fileList.get(i)));
                 DicomObject dcmObj = inputStream.readDicomObject();
                 System.out.println("Store  from " + fileList.get(i) + " - " + (i + 1) + "th file");
-                result = instance.store(dcmObj);
+                result = list.get(0).store(dcmObj);
+                Assert.assertThat(result, IsNull.notNullValue());
             } catch (IOException e) {
             }
-            Assert.assertThat(result, IsNull.notNullValue());
-            boolean b = instance.handles((URI) result);
+            boolean b = list.get(0).handles((URI) result);
             assertEquals(b, true);
-            if(b)
-                instance.at(result);
+            Iterable<StorageInputStream> listRes = list.get(0).at(result);
+            Iterator it = listRes.iterator();
+            int cmp = 0;
+            while(it.hasNext()){
+                it.next();
+                cmp++;
+            }
+            assertEquals(cmp,1);
+            Task<Report> task = instance.getIndexPlugins().get(0).index(listRes);
+            task.run();
             System.out.println("Remove to   " + result);
-            instance.remove(result);
+            list.get(0).remove(result);
+            listRes = list.get(0).at(result);
+            it = listRes.iterator();
+            cmp = 0;
+            while(it.hasNext()){
+                it.next();
+                cmp++;
+            }
+            assertEquals(cmp,0);
         }
     }
 
@@ -165,22 +176,38 @@ public class MongoPluginTest {
     public void testStore_DicomInputStream() throws Exception {
         ArrayList<String> fileList = retrieveFileList(new File("D:\\DICOM_data\\DATA\\"), 0);
         //int borne = fileList.size();
-        int borne = 100;
+        int borne = 1;
+        System.out.println("Store "+borne+" files");
+        List<StorageInterface> list = (List<StorageInterface>) instance.getStoragePlugins();
         for (int i = 0; i < borne; i++) {
             URI result = null;
             try {
                 DicomInputStream inputStream = new DicomInputStream(new File(fileList.get(i)));
                 System.out.println("Store  from " + fileList.get(i) + " - " + (i + 1) + "th file");
-                result = instance.store(inputStream);
+                result = list.get(0).store(inputStream);
+                Assert.assertThat(result, IsNull.notNullValue());
             } catch (IOException e) {
             }
-            Assert.assertThat(result, IsNull.notNullValue());
-            boolean b = instance.handles((URI) result);
+            boolean b = list.get(0).handles((URI) result);
             assertEquals(b, true);
-            if(b)
-                instance.at(result);
+            Iterable<StorageInputStream> listRes = list.get(0).at(result);
+            Iterator it = listRes.iterator();
+            int cmp = 0;
+            while(it.hasNext()){
+                it.next();
+                cmp++;
+            }
+            assertEquals(cmp,1);
             System.out.println("Remove to   " + result);
-            instance.remove(result);
+            list.get(0).remove(result);
+            listRes = list.get(0).at(result);
+            it = listRes.iterator();
+            cmp = 0;
+            while(it.hasNext()){
+                it.next();
+                cmp++;
+            }
+            assertEquals(cmp,0);
         }
     }
 }

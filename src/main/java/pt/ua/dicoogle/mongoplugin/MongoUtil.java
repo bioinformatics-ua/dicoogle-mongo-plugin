@@ -9,6 +9,7 @@ import java.net.URI;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import com.mongodb.gridfs.GridFSDBFile;
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.ArrayList;
 import pt.ua.dicoogle.sdk.datastructs.SearchResult;
@@ -19,12 +20,17 @@ import pt.ua.dicoogle.sdk.datastructs.SearchResult;
  */
 public class MongoUtil {
 
-    public static List<SearchResult> getListFromResult(List<GridFSDBFile> dbObjs, URI location, float score) {
+    public static List<SearchResult> getListFromResult(List<GridFSDBFile> dbObjs, URI location, float score){
         ArrayList<SearchResult> result = new ArrayList<SearchResult>();
         for (int i = 0; i < dbObjs.size(); i++) {
             SearchResult searchResult;
             if (dbObjs.get(i).getMetaData() != null) {
-                searchResult = new SearchResult(location, score, (HashMap<String, Object>) dbObjs.get(i).getMetaData().toMap());
+                String str = location.toString()+dbObjs.get(i).getMetaData().get("SOPInstanceUID");
+                URI uri = null;
+                try{
+                    uri = new URI(str);
+                }catch(URISyntaxException e){}
+                searchResult = new SearchResult(uri, score, (HashMap<String, Object>) dbObjs.get(i).getMetaData().toMap());
                 result.add(searchResult);
             }
         }
