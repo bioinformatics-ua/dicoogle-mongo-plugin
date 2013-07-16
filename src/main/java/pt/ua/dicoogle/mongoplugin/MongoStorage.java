@@ -56,7 +56,7 @@ class MongoStorage implements StorageInterface {
 
     @Override
     public String getScheme() {
-        return this.getName() + "://host:port/dataBaseName/UUIDfileName";
+        return this.getName() + "://"+host+":"+port+"/"+dbName+"/";
     }
 
     @Override

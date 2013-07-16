@@ -37,14 +37,14 @@ import pt.ua.dicoogle.sdk.task.Task;
  */
 public class MongoPluginTest {
 
-    private static MongoPlugin instance;
+    private static MongoPluginSet instance;
 
     public MongoPluginTest() {
     }
 
     @BeforeClass
     public static void setUpClass() throws IOException {
-        instance = new MongoPlugin();
+        instance = new MongoPluginSet();
         ConfigurationHolder settings = null;
         String pathConfigFile = ".\\settings\\mongoplugin.xml";
         try{

@@ -17,7 +17,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with Dicoogle.  If not, see <http://www.gnu.org/licenses/>.
  */
-package pt.ua.dicoogle.sdk.Utils;
+package pt.ua.dicoogle.mongoplugin;
 
 
 import java.lang.reflect.Field;
@@ -33,21 +33,21 @@ import org.dcm4che2.data.Tag;
  *
  * @author Luís A. Bastião Silva <bastiao@ua.pt>
  */
-public class DictionaryAccess
+public class Dictionary
 {
 
     private Hashtable<String, Integer> tagList = new Hashtable<String, Integer>();
     private Hashtable<Integer, String> tagListByTag = new Hashtable<Integer, String>();
 
 
-    private static final DictionaryAccess instance =  new DictionaryAccess(); ;
+    private static final Dictionary instance =  new Dictionary(); ;
 
-    public static DictionaryAccess getInstance()
+    public static Dictionary getInstance()
     {
         return instance;
     }
 
-    private DictionaryAccess()
+    private Dictionary()
     {
 
         Field [] tags = Tag.class.getFields();
@@ -57,9 +57,9 @@ public class DictionaryAccess
                 tagList.put(tags[i].getName(), tags[i].getInt(null));
                 tagListByTag.put(tags[i].getInt(null),tags[i].getName());
             } catch (IllegalArgumentException ex) {
-                Logger.getLogger(DictionaryAccess.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(Dictionary.class.getName()).log(Level.SEVERE, null, ex);
             } catch (IllegalAccessException ex) {
-                Logger.getLogger(DictionaryAccess.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(Dictionary.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
     }
@@ -85,7 +85,7 @@ public class DictionaryAccess
 
     /*public static void  main(String args[]) throws IllegalArgumentException, IllegalAccessException
     {
-        DictionaryAccess da = new DictionaryAccess();
+        Dictionary da = new Dictionary();
         
     }*/
 

@@ -23,8 +23,6 @@ import pt.ua.dicoogle.sdk.settings.ConfigurationHolder;
 @PluginImplementation
 public class MongoPluginSet extends PluginBase {
 
-    
-    private static final Logger log = Logger.getLogger("mongodb");
     private String host;
     private int port;
     protected static MongoClient mongoClient = null;
@@ -35,7 +33,7 @@ public class MongoPluginSet extends PluginBase {
     private static String portKey = "DefaultServerPort";
     
     public MongoPluginSet() {
-       System.out.println("INIT-->2@#2@#2@#2@#2@#2@#2@#2@#2@#");
+       System.out.println("INIT-->MongoDb plugin");
         
         plugQuery = new MongoQuery();
         this.queryPlugins.add(plugQuery);

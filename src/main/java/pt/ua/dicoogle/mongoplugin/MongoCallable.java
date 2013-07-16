@@ -27,7 +27,6 @@ import org.dcm4che2.data.Tag;
 import org.dcm4che2.io.DicomInputStream;
 import static pt.ua.dicoogle.mongoplugin.MongoPluginSet.mongoClient;
 import pt.ua.dicoogle.sdk.StorageInputStream;
-import pt.ua.dicoogle.sdk.Utils.DictionaryAccess;
 import pt.ua.dicoogle.sdk.datastructs.Report;
 
 /**
@@ -80,7 +79,7 @@ public class MongoCallable implements Callable<Report> {
         } catch (URISyntaxException e) {
             return null;
         }
-        DictionaryAccess instance = DictionaryAccess.getInstance();
+        Dictionary instance = Dictionary.getInstance();
         Hashtable<String, Integer> hTable = instance.getTagList();
         Iterator<String> it = hTable.keySet().iterator();
         Map<String, Object> docMap = new HashMap<String, Object>();
