@@ -36,14 +36,14 @@ public class MongoStorageInputStream implements StorageInputStream {
 
     @Override
     public InputStream getInputStream() {
-        if (MongoPlugin.mongoClient == null) {
+        if (MongoPluginSet.mongoClient == null) {
             return null;
         }
         MongoURI mUri = new MongoURI(uri);
         if (mUri.verify()) {
             mUri.getInformation();
             String fileName = mUri.getFileName();
-            DB db = MongoPlugin.mongoClient.getDB(mUri.getDBName());
+            DB db = MongoPluginSet.mongoClient.getDB(mUri.getDBName());
             GridFS fs = new GridFS(db);
             GridFSDBFile in = fs.findOne(fileName);
             if (in == null) {

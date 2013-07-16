@@ -19,7 +19,7 @@ import java.util.Map;
 import org.dcm4che2.data.DicomElement;
 import org.dcm4che2.data.DicomObject;
 import org.dcm4che2.data.Tag;
-import static pt.ua.dicoogle.mongoplugin.MongoPlugin.mongoClient;
+import static pt.ua.dicoogle.mongoplugin.MongoPluginSet.mongoClient;
 import pt.ua.dicoogle.sdk.IndexerInterface;
 import pt.ua.dicoogle.sdk.StorageInputStream;
 import pt.ua.dicoogle.sdk.Utils.DictionaryAccess;
@@ -48,9 +48,9 @@ class MongoIndexer implements IndexerInterface {
 
     public MongoIndexer(ConfigurationHolder settings) {
         this.settings = settings;
-        host = settings.getCnf().getString(hostKey);
-        port = settings.getCnf().getInt(portKey);
-        dbName = settings.getCnf().getString(dbNameKey);
+        host = settings.getConfiguration().getString(hostKey);
+        port = settings.getConfiguration().getInt(portKey);
+        dbName = settings.getConfiguration().getString(dbNameKey);
     }
 
     @Override
@@ -123,9 +123,9 @@ class MongoIndexer implements IndexerInterface {
     @Override
     public void setSettings(ConfigurationHolder stngs) {
         this.settings = stngs;
-        host = settings.getCnf().getString(hostKey);
-        port = settings.getCnf().getInt(portKey);
-        dbName = settings.getCnf().getString(dbNameKey);
+        host = settings.getConfiguration().getString(hostKey);
+        port = settings.getConfiguration().getInt(portKey);
+        dbName = settings.getConfiguration().getString(dbNameKey);
     }
 
     @Override
@@ -194,4 +194,6 @@ class MongoIndexer implements IndexerInterface {
         }
         return uri;
     }
+    
+    
 }

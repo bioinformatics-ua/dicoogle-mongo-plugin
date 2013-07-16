@@ -23,7 +23,7 @@ import org.dcm4che2.data.DicomObject;
 import org.dcm4che2.data.Tag;
 import org.dcm4che2.io.DicomInputStream;
 import org.dcm4che2.io.DicomOutputStream;
-import static pt.ua.dicoogle.mongoplugin.MongoPlugin.mongoClient;
+import static pt.ua.dicoogle.mongoplugin.MongoPluginSet.mongoClient;
 import pt.ua.dicoogle.sdk.StorageInputStream;
 import pt.ua.dicoogle.sdk.StorageInterface;
 import pt.ua.dicoogle.sdk.settings.ConfigurationHolder;
@@ -46,12 +46,12 @@ class MongoStorage implements StorageInterface {
 
     public MongoStorage() {
     }
-
+    
     public MongoStorage(ConfigurationHolder settings) {
         this.settings = settings;
-        host = settings.getCnf().getString(hostKey);
-        port = settings.getCnf().getInt(portKey);
-        dbName = settings.getCnf().getString(dbNameKey);
+        host = settings.getConfiguration().getString(hostKey);
+        port = settings.getConfiguration().getInt(portKey);
+        dbName = settings.getConfiguration().getString(dbNameKey);
     }
 
     @Override
@@ -170,9 +170,9 @@ class MongoStorage implements StorageInterface {
     @Override
     public void setSettings(ConfigurationHolder stngs) {
         this.settings = stngs;
-        host = settings.getCnf().getString(hostKey);
-        port = settings.getCnf().getInt(portKey);
-        dbName = settings.getCnf().getString(dbNameKey);
+        host = settings.getConfiguration().getString(hostKey);
+        port = settings.getConfiguration().getInt(portKey);
+        dbName = settings.getConfiguration().getString(dbNameKey);
     }
 
     @Override

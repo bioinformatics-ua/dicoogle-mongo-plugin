@@ -7,6 +7,7 @@ package pt.ua.dicoogle.mongoplugin;
 import java.net.UnknownHostException;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoException;
+import java.util.logging.Logger;
 import net.xeoh.plugins.base.annotations.PluginImplementation;
 import org.apache.commons.configuration.ConfigurationException;
 import pt.ua.dicoogle.sdk.IndexerInterface;
@@ -20,8 +21,10 @@ import pt.ua.dicoogle.sdk.settings.ConfigurationHolder;
  * @author Louis
  */
 @PluginImplementation
-public class MongoPlugin extends PluginBase {
+public class MongoPluginSet extends PluginBase {
 
+    
+    private static final Logger log = Logger.getLogger("mongodb");
     private String host;
     private int port;
     protected static MongoClient mongoClient = null;
@@ -31,7 +34,9 @@ public class MongoPlugin extends PluginBase {
     private static String hostKey = "DefaultServerHost";
     private static String portKey = "DefaultServerPort";
     
-    public MongoPlugin() {
+    public MongoPluginSet() {
+       System.out.println("INIT-->2@#2@#2@#2@#2@#2@#2@#2@#2@#");
+        
         plugQuery = new MongoQuery();
         this.queryPlugins.add(plugQuery);
         plugIndexer = new MongoIndexer();
@@ -40,14 +45,14 @@ public class MongoPlugin extends PluginBase {
         this.storagePlugins.add(plugStorage);
     }
 
-    public MongoPlugin(ConfigurationHolder settings) throws ConfigurationException {
+   public MongoPluginSet(ConfigurationHolder settings) throws ConfigurationException {
         plugQuery = new MongoQuery();
         plugIndexer = new MongoIndexer();
         plugStorage = new MongoStorage();
 
         this.settings = settings;
-        host = settings.getCnf().getString(hostKey);
-        port = settings.getCnf().getInt(portKey);
+        host = settings.getConfiguration().getString(hostKey);
+        port = settings.getConfiguration().getInt(portKey);
         try {
             if (mongoClient == null) {
                 mongoClient = new MongoClient(host, port);
@@ -76,8 +81,8 @@ public class MongoPlugin extends PluginBase {
     @Override
     public void setSettings(ConfigurationHolder settings) {
         this.settings = settings;
-        host = settings.getCnf().getString(hostKey);
-        port = settings.getCnf().getInt(portKey);
+        host = settings.getConfiguration().getString(hostKey);
+        port = settings.getConfiguration().getInt(portKey);
         
         try {
             if (mongoClient == null) {
@@ -106,4 +111,5 @@ public class MongoPlugin extends PluginBase {
     public ConfigurationHolder getSettings() {
         return settings;
     }
+    
 }

@@ -25,7 +25,7 @@ import org.dcm4che2.data.DicomElement;
 import org.dcm4che2.data.DicomObject;
 import org.dcm4che2.data.Tag;
 import org.dcm4che2.io.DicomInputStream;
-import static pt.ua.dicoogle.mongoplugin.MongoPlugin.mongoClient;
+import static pt.ua.dicoogle.mongoplugin.MongoPluginSet.mongoClient;
 import pt.ua.dicoogle.sdk.StorageInputStream;
 import pt.ua.dicoogle.sdk.Utils.DictionaryAccess;
 import pt.ua.dicoogle.sdk.datastructs.Report;

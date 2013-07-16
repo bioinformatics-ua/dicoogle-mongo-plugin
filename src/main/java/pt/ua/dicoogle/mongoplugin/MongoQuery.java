@@ -9,7 +9,7 @@ import com.mongodb.gridfs.GridFSDBFile;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
-import static pt.ua.dicoogle.mongoplugin.MongoPlugin.mongoClient;
+import static pt.ua.dicoogle.mongoplugin.MongoPluginSet.mongoClient;
 import pt.ua.dicoogle.sdk.QueryInterface;
 import pt.ua.dicoogle.sdk.datastructs.SearchResult;
 import pt.ua.dicoogle.sdk.settings.ConfigurationHolder;
@@ -35,9 +35,9 @@ class MongoQuery implements QueryInterface {
 
     public MongoQuery(ConfigurationHolder settings) {
         this.settings = settings;
-        host = settings.getCnf().getString(hostKey);
-        port = settings.getCnf().getInt(portKey);
-        dbName = settings.getCnf().getString(dbNameKey);
+        host = settings.getConfiguration().getString(hostKey);
+        port = settings.getConfiguration().getInt(portKey);
+        dbName = settings.getConfiguration().getString(dbNameKey);
     }
 
     @Override
@@ -86,9 +86,9 @@ class MongoQuery implements QueryInterface {
     @Override
     public void setSettings(ConfigurationHolder stngs) {
         this.settings = stngs;
-        host = stngs.getCnf().getString(hostKey);
-        port = stngs.getCnf().getInt(portKey);
-        dbName = stngs.getCnf().getString(dbNameKey);
+        host = stngs.getConfiguration().getString(hostKey);
+        port = stngs.getConfiguration().getInt(portKey);
+        dbName = stngs.getConfiguration().getString(dbNameKey);
     }
 
     @Override
