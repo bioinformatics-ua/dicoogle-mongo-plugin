@@ -6,15 +6,9 @@ package pt.ua.dicoogle.mongoplugin;
 
 import com.mongodb.DB;
 import com.mongodb.gridfs.GridFS;
-import com.mongodb.gridfs.GridFSInputFile;
 import com.mongodb.gridfs.GridFSDBFile;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.net.URI;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import pt.ua.dicoogle.sdk.StorageInputStream;
 
 /**
@@ -39,27 +33,14 @@ public class MongoStorageInputStream implements StorageInputStream {
         if (MongoPluginSet.mongoClient == null) {
             return null;
         }
-        MongoURI mUri = new MongoURI(uri);
-        if (mUri.verify()) {
-            mUri.getInformation();
-            String fileName = mUri.getFileName();
-            DB db = MongoPluginSet.mongoClient.getDB(mUri.getDBName());
-            GridFS fs = new GridFS(db);
-            GridFSDBFile in = fs.findOne(fileName);
-            if (in == null) {
-                return null;
-            }
-            return in.getInputStream();
-        }
-        else{
-            File f = new File(this.getURI());
-            try {
-                FileInputStream fis = new FileInputStream(f);
-                return fis;
-            } catch (FileNotFoundException ex) {
-                Logger.getLogger(MongoStorageInputStream.class.getName()).log(Level.SEVERE, null, ex);
-            }
+        MongoURI mUri = new MongoURI(this.uri);
+        mUri.getInformation();
+        DB db = MongoPluginSet.mongoClient.getDB(mUri.getDBName());
+        GridFS fs = new GridFS(db);
+        GridFSDBFile in = fs.findOne(mUri.getFileName());
+        if (in == null) {
             return null;
         }
+        return in.getInputStream();
     }
 }

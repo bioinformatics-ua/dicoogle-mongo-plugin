@@ -73,7 +73,7 @@ public class MongoPluginTest {
     @Test
     public void testQuery() {
         System.out.println("query");
-        String query = "SOPInstanceUID:[1.3.6.1.4.1.9328.50.4.207 TO 1.3.6.1.4.1.9328.50.4.230]";
+        String query = "Rows:396";
         Object[] parameters = null;
         Object result = instance.getQueryPlugins().get(0).query(query, parameters);
         Assert.assertThat(result, IsNull.notNullValue());
@@ -174,7 +174,7 @@ public class MongoPluginTest {
      */
     @Test
     public void testStore_DicomInputStream() throws Exception {
-        ArrayList<String> fileList = retrieveFileList(new File("D:\\DICOM_data\\DATA\\"), 0);
+        ArrayList<String> fileList = retrieveFileList(new File("D:\\DICOM_data\\DICOM_Images"), 0);
         //int borne = fileList.size();
         int borne = 1;
         System.out.println("Store "+borne+" files");

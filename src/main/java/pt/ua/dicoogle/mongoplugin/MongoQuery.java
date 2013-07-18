@@ -20,6 +20,7 @@ import pt.ua.dicoogle.sdk.settings.ConfigurationHolder;
  */
 class MongoQuery implements QueryInterface {
 
+    private DB db;
     private boolean isEnable;
     private URI location;
     private ConfigurationHolder settings;
@@ -38,6 +39,7 @@ class MongoQuery implements QueryInterface {
         host = settings.getConfiguration().getString(hostKey);
         port = settings.getConfiguration().getInt(portKey);
         dbName = settings.getConfiguration().getString(dbNameKey);
+        db = mongoClient.getDB(dbName);
     }
 
     @Override
@@ -47,7 +49,6 @@ class MongoQuery implements QueryInterface {
             return null;
         }
         MongoQueryUtil mongoQuery = new MongoQueryUtil(query);
-        DB db = mongoClient.getDB(dbName);
         List<GridFSDBFile> resultDBobjs = mongoQuery.processQuery(db);
         result = MongoUtil.getListFromResult(resultDBobjs, location, (float) 0.0);
         return result;
@@ -89,6 +90,7 @@ class MongoQuery implements QueryInterface {
         host = stngs.getConfiguration().getString(hostKey);
         port = stngs.getConfiguration().getInt(portKey);
         dbName = stngs.getConfiguration().getString(dbNameKey);
+        db = mongoClient.getDB(dbName);
     }
 
     @Override

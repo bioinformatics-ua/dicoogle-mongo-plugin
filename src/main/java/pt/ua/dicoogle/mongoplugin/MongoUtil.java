@@ -20,17 +20,28 @@ import pt.ua.dicoogle.sdk.datastructs.SearchResult;
  */
 public class MongoUtil {
 
-    public static List<SearchResult> getListFromResult(List<GridFSDBFile> dbObjs, URI location, float score){
+    public static List<SearchResult> getListFromResult(List<GridFSDBFile> dbObjs, URI location, float score) {
         ArrayList<SearchResult> result = new ArrayList<SearchResult>();
         for (int i = 0; i < dbObjs.size(); i++) {
             SearchResult searchResult;
             if (dbObjs.get(i).getMetaData() != null) {
-                String str = location.toString()+dbObjs.get(i).getMetaData().get("SOPInstanceUID");
+                String str = location.toString() + dbObjs.get(i).getMetaData().get("SOPInstanceUID");
                 URI uri = null;
-                try{
+                try {
                     uri = new URI(str);
-                }catch(URISyntaxException e){}
+                } catch (URISyntaxException e) {
+                }
+               /* HashMap<String, Object> map = new HashMap<String, Object>();
+                HashMap<String, Object> mapTemp = (HashMap<String, Object>) dbObjs.get(i).getMetaData().toMap();
+                for (String mapKey : mapTemp.keySet()) {
+                    if (mapTemp.get(mapKey) == null) {
+                        map.put(mapKey, mapTemp.get(mapKey));
+                    } else {
+                        map.put(mapKey, mapTemp.get(mapKey).toString());
+                    }
+                }*/
                 searchResult = new SearchResult(uri, score, (HashMap<String, Object>) dbObjs.get(i).getMetaData().toMap());
+               // searchResult = new SearchResult(uri, score, map);
                 result.add(searchResult);
             }
         }
@@ -126,7 +137,7 @@ public class MongoUtil {
         length = strQuery.length();
         for (int i = 0; i < length; i++) {
             currentChar = strQuery.charAt(i);
-            if (currentChar != ' ' && currentChar != '*' && currentChar != '"') {
+            if (currentChar != ' ' && currentChar != '*' && currentChar != '"' && currentChar != ':') {
                 isBlank = false;
             }
         }

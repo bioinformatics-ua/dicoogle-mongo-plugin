@@ -10,8 +10,7 @@ import com.mongodb.MongoException;
 import com.mongodb.gridfs.GridFS;
 import com.mongodb.gridfs.GridFSInputFile;
 import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -34,6 +33,7 @@ import pt.ua.dicoogle.sdk.settings.ConfigurationHolder;
  */
 class MongoStorage implements StorageInterface {
 
+    private DB db;
     private ConfigurationHolder settings;
     private URI location;
     private String dbName;
@@ -43,20 +43,23 @@ class MongoStorage implements StorageInterface {
     private static String hostKey = "DefaultServerHost";
     private static String portKey = "DefaultServerPort";
     private static String dbNameKey = "DefaultDataBase";
+    private static String rootDirKey = "root-dir";
+    private static String nameKey = "name";
 
     public MongoStorage() {
     }
-    
+
     public MongoStorage(ConfigurationHolder settings) {
         this.settings = settings;
         host = settings.getConfiguration().getString(hostKey);
         port = settings.getConfiguration().getInt(portKey);
         dbName = settings.getConfiguration().getString(dbNameKey);
+        db = mongoClient.getDB(this.dbName);
     }
 
     @Override
     public String getScheme() {
-        return this.getName() + "://"+host+":"+port+"/"+dbName+"/";
+        return this.getName() + "://" + host + ":" + port + "/" + dbName + "/";
     }
 
     @Override
@@ -85,22 +88,22 @@ class MongoStorage implements StorageInterface {
             return null;
         }
         String fileName = dicomObject.get(Tag.SOPInstanceUID).getValueAsString(dicomObject.getSpecificCharacterSet(), 0);
-        URI uri = null;
+        URI uri;
         try {
             uri = new URI(this.location + fileName);
         } catch (URISyntaxException e) {
+            System.out.println("Error : URISyntaxException");
+            return null;
         }
         try {
-            File file = new File(fileName);
-            FileOutputStream fos = new FileOutputStream(file);
-            BufferedOutputStream bos = new BufferedOutputStream(fos);
+            ByteArrayOutputStream os = new ByteArrayOutputStream();
+            BufferedOutputStream bos = new BufferedOutputStream(os);
             DicomOutputStream dos = new DicomOutputStream(bos);
             dos.writeDicomFile(dicomObject);
-            DB db = mongoClient.getDB(this.dbName);
             GridFS saveFs = new GridFS(db);
-            GridFSInputFile ins = saveFs.createFile(file);
+            GridFSInputFile ins = saveFs.createFile(os.toByteArray());
             ins.setFilename(fileName);
-            ins.save();
+            ins.save(ins.getChunkSize());
         } catch (IOException ex) {
             Logger.getLogger(MongoStorage.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -122,9 +125,9 @@ class MongoStorage implements StorageInterface {
             return;
         }
         uri.getInformation();
-        DB db = mongoClient.getDB(uri.getDBName());
         GridFS removeFS = new GridFS(db);
         removeFS.remove(uri.getFileName());
+        System.out.println("Remove done");
     }
 
     @Override
@@ -173,6 +176,7 @@ class MongoStorage implements StorageInterface {
         host = settings.getConfiguration().getString(hostKey);
         port = settings.getConfiguration().getInt(portKey);
         dbName = settings.getConfiguration().getString(dbNameKey);
+        db = mongoClient.getDB(this.dbName);
     }
 
     @Override
