@@ -11,6 +11,8 @@ import com.mongodb.gridfs.GridFSDBFile;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import static pt.ua.dicoogle.mongoplugin.MongoPluginSet.mongoClient;
 import pt.ua.dicoogle.sdk.IndexerInterface;
 import pt.ua.dicoogle.sdk.StorageInputStream;
@@ -34,8 +36,10 @@ class MongoIndexer implements IndexerInterface {
     private static String hostKey = "DefaultServerHost";
     private static String portKey = "DefaultServerPort";
     private static String dbNameKey = "DefaultDataBase";
-
+    private static String fileName = "log.txt";
+    
     public MongoIndexer() {
+        System.out.println("INIT->MongoIndexer");
     }
 
     public MongoIndexer(ConfigurationHolder settings) {
@@ -50,33 +54,46 @@ class MongoIndexer implements IndexerInterface {
     public Task<Report> index(StorageInputStream stream) {
         ArrayList<StorageInputStream> itrbl = new ArrayList<StorageInputStream>();
         itrbl.add(stream);
-        MongoCallable c = new MongoCallable(itrbl, this.location, db);
+        MongoCallable c = new MongoCallable(itrbl, this.location, db, fileName);
         Task<Report> task = new Task(c);
         return task;
     }
 
     @Override
     public Task<Report> index(Iterable<StorageInputStream> itrbl) {
-        MongoCallable c = new MongoCallable(itrbl, this.location, db);
+        MongoCallable c = new MongoCallable(itrbl, this.location, db, fileName);
         Task<Report> task = new Task(c);
         return task;
     }
 
     @Override
     public boolean unindex(URI pUri) {
-        MongoURI uri = new MongoURI(pUri);
+        String str = pUri.toString();
+        URI uriTemp;
+        try {
+            uriTemp = new URI(str.replaceAll(".B", ".MD"));
+        } catch (URISyntaxException ex) {
+            Logger.getLogger(MongoIndexer.class.getName()).log(Level.SEVERE, null, ex);
+            return false;
+        }
+        MongoURI uri = new MongoURI(uriTemp);
+        //MongoURI uri = new MongoURI(pUri);
         if (!isEnable || !uri.verify() || mongoClient == null) {
             return false;
         }
         uri.getInformation();
         GridFS saveFs = new GridFS(db);
-        GridFSDBFile file = saveFs.findOne(uri.getFileName());
-        if (file == null) {
-            return false;
-        } else {
-            file.setMetaData(new BasicDBObject());
-            file.save();
-        }
+
+        /*GridFSDBFile file = saveFs.findOne(uri.getFileName());
+         if (file == null) {
+         return false;
+         } else {
+         file.setMetaData(new BasicDBObject());
+         file.save();
+         }
+         return true;*/
+
+        saveFs.remove(uri.getFileName());
         return true;
     }
 

@@ -75,6 +75,8 @@ public class MongoPluginTest {
         System.out.println("query");
         String query = "Rows:396";
         Object[] parameters = null;
+        if(instance.getQueryPlugins().isEmpty())
+            return;
         Object result = instance.getQueryPlugins().get(0).query(query, parameters);
         Assert.assertThat(result, IsNull.notNullValue());
         Assert.assertThat(result, IsInstanceOf.instanceOf(Iterable.class));
@@ -92,6 +94,8 @@ public class MongoPluginTest {
         System.out.println("at");
         URI location = uri;
         List<StorageInterface> list = (List<StorageInterface>) instance.getStoragePlugins();
+        if(list.isEmpty())
+            return;
         Object result = list.get(0).at(location);
         Assert.assertThat(result, IsNull.notNullValue());
         Assert.assertThat(result, IsInstanceOf.instanceOf(Iterable.class));
@@ -127,17 +131,20 @@ public class MongoPluginTest {
      * Test of store method, of class MongoPlugin.
      */
     @Test
-    public void testStore_DicomObject() throws IOException {
+    public void testStore_DicomObject() throws IOException, URISyntaxException {
         ArrayList<String> fileList = retrieveFileList(new File("D:\\DICOM_data\\DATA\\"), 0);
         //ArrayList<String> fileList = retrieveFileList(new File("D:\\DICOM_data\\DICOM_Images"), 0);
         //int borne = fileList.size();
         int borne = 1;
         System.out.println("Store "+borne+" files");
         List<StorageInterface> list = (List<StorageInterface>) instance.getStoragePlugins();
+        if(list.isEmpty())
+            return;
         for (int i = 0; i < borne; i++) {
             URI result = null;
             try {
-                DicomInputStream inputStream = new DicomInputStream(new File(fileList.get(i)));
+                //DicomInputStream inputStream = new DicomInputStream(new File(fileList.get(i)));
+                DicomInputStream inputStream = new DicomInputStream(new File("D:\\DICOM_data\\DICOM_Images\\1.dcm"));
                 DicomObject dcmObj = inputStream.readDicomObject();
                 System.out.println("Store  from " + fileList.get(i) + " - " + (i + 1) + "th file");
                 result = list.get(0).store(dcmObj);
@@ -154,9 +161,16 @@ public class MongoPluginTest {
                 cmp++;
             }
             assertEquals(cmp,1);
+            if(instance.getIndexPlugins().isEmpty())
+                return;
             Task<Report> task = instance.getIndexPlugins().get(0).index(listRes);
             task.run();
             System.out.println("Remove to   " + result);
+            for(StorageInputStream sis : listRes){
+                String str = sis.getURI().toString();
+                URI uriTemp = new URI(str.replaceAll(".B", ".MD"));
+                instance.getIndexPlugins().get(0).unindex(uriTemp);
+            }
             list.get(0).remove(result);
             listRes = list.get(0).at(result);
             it = listRes.iterator();
@@ -174,11 +188,13 @@ public class MongoPluginTest {
      */
     @Test
     public void testStore_DicomInputStream() throws Exception {
-        ArrayList<String> fileList = retrieveFileList(new File("D:\\DICOM_data\\DICOM_Images"), 0);
+        /*ArrayList<String> fileList = retrieveFileList(new File("D:\\DICOM_data\\DICOM_Images"), 0);
         //int borne = fileList.size();
         int borne = 1;
         System.out.println("Store "+borne+" files");
         List<StorageInterface> list = (List<StorageInterface>) instance.getStoragePlugins();
+        if(list.isEmpty())
+            return;
         for (int i = 0; i < borne; i++) {
             URI result = null;
             try {
@@ -208,6 +224,6 @@ public class MongoPluginTest {
                 cmp++;
             }
             assertEquals(cmp,0);
-        }
+        }*/
     }
 }

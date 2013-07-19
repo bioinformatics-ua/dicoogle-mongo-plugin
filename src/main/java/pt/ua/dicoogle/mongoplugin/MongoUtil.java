@@ -31,7 +31,7 @@ public class MongoUtil {
                     uri = new URI(str);
                 } catch (URISyntaxException e) {
                 }
-               /* HashMap<String, Object> map = new HashMap<String, Object>();
+                HashMap<String, Object> map = new HashMap<String, Object>();
                 HashMap<String, Object> mapTemp = (HashMap<String, Object>) dbObjs.get(i).getMetaData().toMap();
                 for (String mapKey : mapTemp.keySet()) {
                     if (mapTemp.get(mapKey) == null) {
@@ -39,9 +39,9 @@ public class MongoUtil {
                     } else {
                         map.put(mapKey, mapTemp.get(mapKey).toString());
                     }
-                }*/
-                searchResult = new SearchResult(uri, score, (HashMap<String, Object>) dbObjs.get(i).getMetaData().toMap());
-               // searchResult = new SearchResult(uri, score, map);
+                }
+                //searchResult = new SearchResult(uri, score, (HashMap<String, Object>) dbObjs.get(i).getMetaData().toMap());
+                searchResult = new SearchResult(uri, score, map);
                 result.add(searchResult);
             }
         }

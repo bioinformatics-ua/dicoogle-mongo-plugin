@@ -32,6 +32,7 @@ class MongoQuery implements QueryInterface {
     private static String dbNameKey = "DefaultDataBase";
 
     public MongoQuery() {
+        System.out.println("INIT->MongoQuery");
     }
 
     public MongoQuery(ConfigurationHolder settings) {

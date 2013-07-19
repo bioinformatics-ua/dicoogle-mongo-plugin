@@ -8,7 +8,10 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mongodb.gridfs.GridFS;
 import com.mongodb.gridfs.GridFSDBFile;
+import com.mongodb.gridfs.GridFSInputFile;
 import java.io.BufferedInputStream;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -34,12 +37,14 @@ public class MongoCallable implements Callable<Report> {
     private DB db;
     private Iterable<StorageInputStream> itrblStorageInputStream = null;
     private URI location;
+    private String fileName;
 
-    public MongoCallable(Iterable<StorageInputStream> itrbl, URI pLocation, DB pDb) {
+    public MongoCallable(Iterable<StorageInputStream> itrbl, URI pLocation, DB pDb, String fileName) {
         super();
         this.itrblStorageInputStream = itrbl;
         this.location = pLocation;
-        db = pDb;
+        this.db = pDb;
+        this.fileName = fileName;
     }
 
     public void setItrblStorageInputStrem(Iterable<StorageInputStream> itrbl) {
@@ -51,12 +56,27 @@ public class MongoCallable implements Callable<Report> {
             return null;
         }
         for (StorageInputStream stream : itrblStorageInputStream) {
+            BufferedWriter bufWriter;
+            FileWriter fileWriter;
+            String SOPInstanceUID;
+            long start, end;
+            start = System.currentTimeMillis();
             InputStream is = stream.getInputStream();
             InputStream bufferedIn = new BufferedInputStream(is);
             try {
                 DicomInputStream dis = new DicomInputStream(bufferedIn);
                 DicomObject dicomObj = dis.readDicomObject();
-                this.store(retrieveHeader(dicomObj), dicomObj.get(Tag.SOPInstanceUID).getValueAsString(dicomObj.getSpecificCharacterSet(), 0));
+                SOPInstanceUID = dicomObj.get(Tag.SOPInstanceUID).getValueAsString(dicomObj.getSpecificCharacterSet(), 0);
+                this.store(retrieveHeader(dicomObj), SOPInstanceUID);
+                
+                end = System.currentTimeMillis();
+                fileWriter = new FileWriter(fileName, true);
+                bufWriter = new BufferedWriter(fileWriter);
+                bufWriter.newLine();
+                bufWriter.write(String.format("%s %d %d", SOPInstanceUID, start, end));
+                bufWriter.close();
+                fileWriter.close();
+                System.out.println("Indexed " + stream.getURI());
             } catch (IOException ex) {
                 Logger.getLogger(MongoIndexer.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -67,11 +87,15 @@ public class MongoCallable implements Callable<Report> {
     private URI store(HashMap<String, Object> map, String fileName) {
         URI uri;
         try {
-            uri = new URI(location + fileName);
+            //uri = new URI(location + fileName);
+            uri = new URI(location + fileName + ".MD");
         } catch (URISyntaxException e) {
             return null;
         }
-        GridFSDBFile file = new GridFS(db).findOne(fileName);
+        //GridFSDBFile file = new GridFS(db).findOne(fileName);
+        byte[] data = {0};
+        GridFSInputFile file = new GridFS(db).createFile(data);
+        file.setFilename(fileName + ".MD");
         file.setMetaData(new BasicDBObject(map));
         file.save();
         return uri;
@@ -91,11 +115,18 @@ public class MongoCallable implements Callable<Report> {
                         continue;
                     }
                 }
-                String tagValue = dicomObject.getString(tag);
+                DicomElement dicomElt = dicomObject.get(tag);
+                String tagValue = dicomElt.getValueAsString(dicomObject.getSpecificCharacterSet(), 0);
                 if (tagValue == null) {
                     continue;
                 }
-                map.put(tagName, tagValue);
+                Object obj;
+                try {
+                    obj = Double.parseDouble(tagValue);
+                } catch (NumberFormatException e) {
+                    obj = tagValue;
+                }
+                map.put(tagName, obj);
             } catch (Exception e) {
             }
         }

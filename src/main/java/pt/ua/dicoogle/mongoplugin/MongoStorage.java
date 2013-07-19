@@ -43,10 +43,9 @@ class MongoStorage implements StorageInterface {
     private static String hostKey = "DefaultServerHost";
     private static String portKey = "DefaultServerPort";
     private static String dbNameKey = "DefaultDataBase";
-    private static String rootDirKey = "root-dir";
-    private static String nameKey = "name";
 
     public MongoStorage() {
+        System.out.println("INIT->MongoStorage");
     }
 
     public MongoStorage(ConfigurationHolder settings) {
@@ -87,7 +86,8 @@ class MongoStorage implements StorageInterface {
         if (!isEnable || mongoClient == null || dicomObject == null) {
             return null;
         }
-        String fileName = dicomObject.get(Tag.SOPInstanceUID).getValueAsString(dicomObject.getSpecificCharacterSet(), 0);
+        //String fileName = dicomObject.get(Tag.SOPInstanceUID).getValueAsString(dicomObject.getSpecificCharacterSet(), 0);
+        String fileName = dicomObject.get(Tag.SOPInstanceUID).getValueAsString(dicomObject.getSpecificCharacterSet(), 0)+".B";
         URI uri;
         try {
             uri = new URI(this.location + fileName);
