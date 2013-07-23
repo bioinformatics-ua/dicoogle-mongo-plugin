@@ -30,9 +30,23 @@ public class MongoURI {
         this.uri = uri;
     }
 
+    private void getInformationNoMongo() {
+        String str = this.uri.toString();
+        int index = str.lastIndexOf("/");
+        if(index == -1)
+            index = str.lastIndexOf("\\");
+        String result = str.substring(index + 1);
+        if (result.endsWith(".dcm")) {
+            result = result.substring(0, result.length() - 4);
+        }
+        this.fileName = result;
+    }
+
     public void getInformation() {
-        if(!this.verify())
+        if (!this.verify()) {
+            getInformationNoMongo();
             return;
+        }
         String path = uri.getPath();
         String str = "";
         int i = 1;
@@ -56,63 +70,73 @@ public class MongoURI {
         }
         fileName = str;
     }
-    
+
     public boolean verify() {
-        String uri = this.uri.toString();
+        String strUri = this.uri.toString();
         String str = "";
         int cmp = 0, i = 0;
         char currentChar = 0;
-        while (currentChar != ':' && cmp < uri.length()) {
-            currentChar = uri.charAt(cmp);
+        while (currentChar != ':' && cmp < strUri.length()) {
+            currentChar = strUri.charAt(cmp);
             cmp++;
-            if(currentChar != ':')
+            if (currentChar != ':') {
                 str += currentChar;
-        }   
-        if (!str.equals("mongodb") || cmp+2>=uri.length()) {
+            }
+        }
+        if (!str.equals("mongodb") || cmp + 2 >= strUri.length()) {
             return false;
         }
-        if(!uri.substring(cmp, cmp+2).equals("//"))
+        if (!strUri.substring(cmp, cmp + 2).equals("//")) {
             return false;
+        }
         cmp += 2;
-        currentChar = uri.charAt(cmp);
-        while (currentChar != ':' && cmp < uri.length()) {
-            currentChar = uri.charAt(cmp);
+        currentChar = strUri.charAt(cmp);
+        while (currentChar != ':' && cmp < strUri.length()) {
+            currentChar = strUri.charAt(cmp);
             cmp++;
-            if(currentChar != ':')
+            if (currentChar != ':') {
                 i++;
+            }
         }
-        if(i==0)
+        if (i == 0) {
             return false;
+        }
         currentChar = 0;
         i = 0;
-        while (currentChar != '/' && cmp < uri.length()) {
-            currentChar = uri.charAt(cmp);
+        while (currentChar != '/' && cmp < strUri.length()) {
+            currentChar = strUri.charAt(cmp);
             cmp++;
-            if(currentChar != '/')
+            if (currentChar != '/') {
                 i++;
+            }
         }
-        if(i==0)
+        if (i == 0) {
             return false;
+        }
         currentChar = 0;
         i = 0;
-        while (currentChar != '/' && cmp < uri.length()) {
-            currentChar = uri.charAt(cmp);
+        while (currentChar != '/' && cmp < strUri.length()) {
+            currentChar = strUri.charAt(cmp);
             cmp++;
-            if(currentChar != '/')
+            if (currentChar != '/') {
                 i++;
+            }
         }
-        if(i==0)
+        if (i == 0) {
             return false;
+        }
         currentChar = 0;
         i = 0;
-        while (currentChar != '/' && cmp < uri.length()) {
-            currentChar = uri.charAt(cmp);
+        while (currentChar != '/' && cmp < strUri.length()) {
+            currentChar = strUri.charAt(cmp);
             cmp++;
-            if(currentChar != '/')
+            if (currentChar != '/') {
                 i++;
+            }
         }
-        if(i==0)
+        if (i == 0) {
             return false;
+        }
         return true;
     }
 
@@ -121,7 +145,15 @@ public class MongoURI {
     }
 
     public String getFileName() {
-        return fileName;
+        String str = this.uri.toString();
+        int index = str.lastIndexOf("/");
+        if(index == -1)
+            index = str.lastIndexOf("\\");
+        String result = str.substring(index + 1);
+        if (result.endsWith(".dcm")) {
+            result = result.substring(0, result.length() - 4);
+        }
+        return result;
     }
 
     public String getUID() {

@@ -4,8 +4,8 @@
  */
 package pt.ua.dicoogle.mongoplugin;
 
-import com.mongodb.DB;
-import com.mongodb.gridfs.GridFSDBFile;
+import com.mongodb.DBCollection;
+import com.mongodb.DBObject;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
@@ -20,16 +20,18 @@ import pt.ua.dicoogle.sdk.settings.ConfigurationHolder;
  */
 class MongoQuery implements QueryInterface {
 
-    private DB db;
+    private DBCollection collection;
     private boolean isEnable;
     private URI location;
     private ConfigurationHolder settings;
     private String dbName;
+    private String collectionName;
     private String host;
     private int port;
     private static String hostKey = "DefaultServerHost";
     private static String portKey = "DefaultServerPort";
     private static String dbNameKey = "DefaultDataBase";
+    private static String collectionNameKey = "DefaultCollection";
 
     public MongoQuery() {
         System.out.println("INIT->MongoQuery");
@@ -40,7 +42,8 @@ class MongoQuery implements QueryInterface {
         host = settings.getConfiguration().getString(hostKey);
         port = settings.getConfiguration().getInt(portKey);
         dbName = settings.getConfiguration().getString(dbNameKey);
-        db = mongoClient.getDB(dbName);
+        collectionName = settings.getConfiguration().getString(collectionNameKey);
+        collection = mongoClient.getDB(dbName).getCollection(collectionName);
     }
 
     @Override
@@ -50,7 +53,7 @@ class MongoQuery implements QueryInterface {
             return null;
         }
         MongoQueryUtil mongoQuery = new MongoQueryUtil(query);
-        List<GridFSDBFile> resultDBobjs = mongoQuery.processQuery(db);
+        List<DBObject> resultDBobjs = mongoQuery.processQuery(collection);
         result = MongoUtil.getListFromResult(resultDBobjs, location, (float) 0.0);
         return result;
     }
@@ -88,10 +91,11 @@ class MongoQuery implements QueryInterface {
     @Override
     public void setSettings(ConfigurationHolder stngs) {
         this.settings = stngs;
-        host = stngs.getConfiguration().getString(hostKey);
-        port = stngs.getConfiguration().getInt(portKey);
-        dbName = stngs.getConfiguration().getString(dbNameKey);
-        db = mongoClient.getDB(dbName);
+        host = settings.getConfiguration().getString(hostKey);
+        port = settings.getConfiguration().getInt(portKey);
+        dbName = settings.getConfiguration().getString(dbNameKey);
+        collectionName = settings.getConfiguration().getString(collectionNameKey);
+        collection = mongoClient.getDB(dbName).getCollection(collectionName);
     }
 
     @Override

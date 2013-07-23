@@ -5,14 +5,11 @@
 package pt.ua.dicoogle.mongoplugin;
 
 import com.mongodb.BasicDBObject;
-import com.mongodb.DB;
-import com.mongodb.gridfs.GridFS;
-import com.mongodb.gridfs.GridFSDBFile;
+import com.mongodb.DBCollection;
+import com.mongodb.DBObject;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.dcm4che2.data.Tag;
 import static pt.ua.dicoogle.mongoplugin.MongoPluginSet.mongoClient;
 import pt.ua.dicoogle.sdk.IndexerInterface;
 import pt.ua.dicoogle.sdk.StorageInputStream;
@@ -26,16 +23,13 @@ import pt.ua.dicoogle.sdk.task.Task;
  */
 class MongoIndexer implements IndexerInterface {
 
-    private DB db;
+    private DBCollection collection;
     private boolean isEnable;
-    private URI location;
     private ConfigurationHolder settings = null;
     private String dbName;
-    private String host;
-    private int port;
-    private static String hostKey = "DefaultServerHost";
-    private static String portKey = "DefaultServerPort";
+    private String collectionName;
     private static String dbNameKey = "DefaultDataBase";
+    private static String collectionNameKey = "DefaultCollection";
     private static String fileName = "log.txt";
     
     public MongoIndexer() {
@@ -44,56 +38,37 @@ class MongoIndexer implements IndexerInterface {
 
     public MongoIndexer(ConfigurationHolder settings) {
         this.settings = settings;
-        host = settings.getConfiguration().getString(hostKey);
-        port = settings.getConfiguration().getInt(portKey);
         dbName = settings.getConfiguration().getString(dbNameKey);
-        db = mongoClient.getDB(dbName);
+        collectionName = settings.getConfiguration().getString(collectionNameKey);
+        collection = mongoClient.getDB(dbName).getCollection(collectionName);
     }
 
     @Override
     public Task<Report> index(StorageInputStream stream) {
         ArrayList<StorageInputStream> itrbl = new ArrayList<StorageInputStream>();
         itrbl.add(stream);
-        MongoCallable c = new MongoCallable(itrbl, this.location, db, fileName);
+        MongoCallable c = new MongoCallable(itrbl, collection, fileName);
         Task<Report> task = new Task(c);
         return task;
     }
 
     @Override
     public Task<Report> index(Iterable<StorageInputStream> itrbl) {
-        MongoCallable c = new MongoCallable(itrbl, this.location, db, fileName);
+        MongoCallable c = new MongoCallable(itrbl, collection, fileName);
         Task<Report> task = new Task(c);
         return task;
     }
 
     @Override
     public boolean unindex(URI pUri) {
-        String str = pUri.toString();
-        URI uriTemp;
-        try {
-            uriTemp = new URI(str.replaceAll(".B", ".MD"));
-        } catch (URISyntaxException ex) {
-            Logger.getLogger(MongoIndexer.class.getName()).log(Level.SEVERE, null, ex);
+        MongoURI uri = new MongoURI(pUri);
+        if (!isEnable || mongoClient == null) {
             return false;
         }
-        MongoURI uri = new MongoURI(uriTemp);
-        //MongoURI uri = new MongoURI(pUri);
-        if (!isEnable || !uri.verify() || mongoClient == null) {
-            return false;
-        }
-        uri.getInformation();
-        GridFS saveFs = new GridFS(db);
-
-        /*GridFSDBFile file = saveFs.findOne(uri.getFileName());
-         if (file == null) {
-         return false;
-         } else {
-         file.setMetaData(new BasicDBObject());
-         file.save();
-         }
-         return true;*/
-
-        saveFs.remove(uri.getFileName());
+        Dictionary dicoInstance = Dictionary.getInstance();
+        DBObject query = new BasicDBObject();
+        query.put(dicoInstance.tagName(Tag.SOPInstanceUID), uri.getFileName());
+        collection.findAndRemove(query);
         return true;
     }
 
@@ -105,11 +80,6 @@ class MongoIndexer implements IndexerInterface {
     @Override
     public boolean enable() {
         if (mongoClient == null || this.settings == null) {
-            return false;
-        }
-        try {
-            location = new URI("mongodb" + "://" + host + ":" + port + "/" + dbName + "/");
-        } catch (URISyntaxException e) {
             return false;
         }
         isEnable = true;
@@ -130,10 +100,9 @@ class MongoIndexer implements IndexerInterface {
     @Override
     public void setSettings(ConfigurationHolder stngs) {
         this.settings = stngs;
-        host = settings.getConfiguration().getString(hostKey);
-        port = settings.getConfiguration().getInt(portKey);
         dbName = settings.getConfiguration().getString(dbNameKey);
-        db = mongoClient.getDB(dbName);
+        collectionName = settings.getConfiguration().getString(collectionNameKey);
+        collection = mongoClient.getDB(dbName).getCollection(collectionName);
     }
 
     @Override

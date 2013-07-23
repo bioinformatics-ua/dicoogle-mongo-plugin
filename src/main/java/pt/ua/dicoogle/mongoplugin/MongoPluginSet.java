@@ -7,7 +7,6 @@ package pt.ua.dicoogle.mongoplugin;
 import java.net.UnknownHostException;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoException;
-import java.util.logging.Logger;
 import net.xeoh.plugins.base.annotations.PluginImplementation;
 import org.apache.commons.configuration.ConfigurationException;
 import pt.ua.dicoogle.sdk.IndexerInterface;

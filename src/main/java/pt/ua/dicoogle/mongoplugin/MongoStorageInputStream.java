@@ -37,7 +37,8 @@ public class MongoStorageInputStream implements StorageInputStream {
         mUri.getInformation();
         DB db = MongoPluginSet.mongoClient.getDB(mUri.getDBName());
         GridFS fs = new GridFS(db);
-        GridFSDBFile in = fs.findOne(mUri.getFileName());
+        String fileName = mUri.getFileName();
+        GridFSDBFile in = fs.findOne(fileName);
         if (in == null) {
             return null;
         }

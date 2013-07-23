@@ -5,9 +5,10 @@
 package pt.ua.dicoogle.mongoplugin;
 
 import com.mongodb.BasicDBObject;
-import com.mongodb.DB;
-import com.mongodb.gridfs.GridFS;
-import com.mongodb.gridfs.GridFSDBFile;
+import com.mongodb.DBCollection;
+import com.mongodb.DBCursor;
+import com.mongodb.DBObject;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -30,9 +31,12 @@ public class MongoQueryUtil {
         this.query = query;
     }
     
-    public List<GridFSDBFile> processQuery(DB database) {
-        GridFS fs = new GridFS(database);
-        List<GridFSDBFile> result = fs.find(this.query);
+    public List<DBObject> processQuery(DBCollection collection){
+        List<DBObject> result = new ArrayList<DBObject>();
+        DBCursor cursor = collection.find(this.query);
+        while(cursor.hasNext()){
+            result.add(cursor.next());
+        }
         return result;
     }
     

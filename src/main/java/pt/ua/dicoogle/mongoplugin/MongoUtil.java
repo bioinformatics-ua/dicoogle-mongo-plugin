@@ -8,10 +8,10 @@ import java.util.HashMap;
 import java.net.URI;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
-import com.mongodb.gridfs.GridFSDBFile;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.ArrayList;
+import org.dcm4che2.data.Tag;
 import pt.ua.dicoogle.sdk.datastructs.SearchResult;
 
 /**
@@ -19,20 +19,21 @@ import pt.ua.dicoogle.sdk.datastructs.SearchResult;
  * @author Louis
  */
 public class MongoUtil {
-
-    public static List<SearchResult> getListFromResult(List<GridFSDBFile> dbObjs, URI location, float score) {
+    
+    public static List<SearchResult> getListFromResult(List<DBObject> dbObjs, URI location, float score) {
         ArrayList<SearchResult> result = new ArrayList<SearchResult>();
+        String strSOPUID = Dictionary.getInstance().tagName(Tag.SOPInstanceUID);
         for (int i = 0; i < dbObjs.size(); i++) {
             SearchResult searchResult;
-            if (dbObjs.get(i).getMetaData() != null) {
-                String str = location.toString() + dbObjs.get(i).getMetaData().get("SOPInstanceUID");
+            if (dbObjs.get(i).get(strSOPUID) != null) {
+                String str = location.toString() + dbObjs.get(i).get(strSOPUID);
                 URI uri = null;
                 try {
                     uri = new URI(str);
                 } catch (URISyntaxException e) {
                 }
                 HashMap<String, Object> map = new HashMap<String, Object>();
-                HashMap<String, Object> mapTemp = (HashMap<String, Object>) dbObjs.get(i).getMetaData().toMap();
+                HashMap<String, Object> mapTemp = (HashMap<String, Object>) dbObjs.get(i).toMap();
                 for (String mapKey : mapTemp.keySet()) {
                     if (mapTemp.get(mapKey) == null) {
                         map.put(mapKey, mapTemp.get(mapKey));
@@ -40,14 +41,13 @@ public class MongoUtil {
                         map.put(mapKey, mapTemp.get(mapKey).toString());
                     }
                 }
-                //searchResult = new SearchResult(uri, score, (HashMap<String, Object>) dbObjs.get(i).getMetaData().toMap());
                 searchResult = new SearchResult(uri, score, map);
                 result.add(searchResult);
             }
         }
         return result;
     }
-
+    
     private static BasicDBObject decodeStringToQuery(String strQuery) {
         BasicDBObject query;
         Object obj, lowObj, highObj;
@@ -252,7 +252,7 @@ public class MongoUtil {
 
     private static BasicDBObject madeQueryIsValue(String field, Object value, boolean isNot) {
         BasicDBObject query = new BasicDBObject();
-        String str = "metadata." + field;
+        String str = field;
         if (!isNot) {
             query.put(str, value);
         } else {
@@ -263,7 +263,7 @@ public class MongoUtil {
 
     private static BasicDBObject madeQueryIsValueRegexInsensitive(String field, Object value, boolean isNot) {
         BasicDBObject query = new BasicDBObject();
-        String str = "metadata." + field;
+        String str = field;
         if (!isNot) {
             query.put(str, new BasicDBObject("$regex", value + ".*").append("$options", "i"));
         } else {

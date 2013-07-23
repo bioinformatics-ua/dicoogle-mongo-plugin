@@ -5,17 +5,12 @@
 package pt.ua.dicoogle.mongoplugin;
 
 import com.mongodb.BasicDBObject;
-import com.mongodb.DB;
-import com.mongodb.gridfs.GridFS;
-import com.mongodb.gridfs.GridFSDBFile;
-import com.mongodb.gridfs.GridFSInputFile;
+import com.mongodb.DBCollection;
 import java.io.BufferedInputStream;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.concurrent.Callable;
@@ -34,16 +29,14 @@ import pt.ua.dicoogle.sdk.datastructs.Report;
  */
 public class MongoCallable implements Callable<Report> {
 
-    private DB db;
+    private DBCollection collection;
     private Iterable<StorageInputStream> itrblStorageInputStream = null;
-    private URI location;
     private String fileName;
 
-    public MongoCallable(Iterable<StorageInputStream> itrbl, URI pLocation, DB pDb, String fileName) {
+    public MongoCallable(Iterable<StorageInputStream> itrbl, DBCollection pCollection, String fileName) {
         super();
         this.itrblStorageInputStream = itrbl;
-        this.location = pLocation;
-        this.db = pDb;
+        this.collection = pCollection;
         this.fileName = fileName;
     }
 
@@ -67,7 +60,9 @@ public class MongoCallable implements Callable<Report> {
                 DicomInputStream dis = new DicomInputStream(bufferedIn);
                 DicomObject dicomObj = dis.readDicomObject();
                 SOPInstanceUID = dicomObj.get(Tag.SOPInstanceUID).getValueAsString(dicomObj.getSpecificCharacterSet(), 0);
-                this.store(retrieveHeader(dicomObj), SOPInstanceUID);
+                HashMap<String, Object> map = retrieveHeader(dicomObj);
+                BasicDBObject obj = new BasicDBObject(map);
+                collection.insert(obj);
                 
                 end = System.currentTimeMillis();
                 fileWriter = new FileWriter(fileName, true);
@@ -84,31 +79,19 @@ public class MongoCallable implements Callable<Report> {
         return new Report();
     }
 
-    private URI store(HashMap<String, Object> map, String fileName) {
-        URI uri;
-        try {
-            //uri = new URI(location + fileName);
-            uri = new URI(location + fileName + ".MD");
-        } catch (URISyntaxException e) {
-            return null;
-        }
-        //GridFSDBFile file = new GridFS(db).findOne(fileName);
-        byte[] data = {0};
-        GridFSInputFile file = new GridFS(db).createFile(data);
-        file.setFilename(fileName + ".MD");
-        file.setMetaData(new BasicDBObject(map));
-        file.save();
-        return uri;
-    }
-
     private HashMap<String, Object> retrieveHeader(DicomObject dicomObject) {
         HashMap<String, Object> map = new HashMap<String, Object>();
+        Dictionary dicoInstance = Dictionary.getInstance();
         Iterator iter = dicomObject.datasetIterator();
         while (iter.hasNext()) {
             DicomElement element = (DicomElement) iter.next();
             int tag = element.tag();
+            if(tag == Tag.PixelData)
+                continue;
             try {
-                String tagName = dicomObject.nameOf(tag);
+                String tagName = dicoInstance.tagName(tag);
+                if(tagName == null)
+                    tagName = dicomObject.nameOf(tag);
                 if (dicomObject.vrOf(tag).toString().equals("SQ")) {
                     if (element.hasItems()) {
                         map.putAll(retrieveHeader(element.getDicomObject()));

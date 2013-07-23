@@ -35,11 +35,11 @@ import pt.ua.dicoogle.sdk.task.Task;
  *
  * @author Louis
  */
-public class MongoPluginTest {
-
+public class MongoPluginSetTest {
+    
     private static MongoPluginSet instance;
 
-    public MongoPluginTest() {
+    public MongoPluginSetTest() {
     }
 
     @BeforeClass
@@ -73,7 +73,7 @@ public class MongoPluginTest {
     @Test
     public void testQuery() {
         System.out.println("query");
-        String query = "Rows:396";
+        String query = "PatientName:C*";
         Object[] parameters = null;
         if(instance.getQueryPlugins().isEmpty())
             return;
@@ -85,6 +85,8 @@ public class MongoPluginTest {
         while (it.hasNext()) {
             Object obj = it.next();
             Assert.assertThat(obj, IsInstanceOf.instanceOf(SearchResult.class));
+            SearchResult res = (SearchResult)obj;
+            System.out.println(res.getExtraData().toString());
             i++;
         }
         //Assert.assertThat(i, IsNot.not(0));
@@ -132,7 +134,7 @@ public class MongoPluginTest {
      */
     @Test
     public void testStore_DicomObject() throws IOException, URISyntaxException {
-        ArrayList<String> fileList = retrieveFileList(new File("D:\\DICOM_data\\DATA\\"), 0);
+        ArrayList<String> fileList = retrieveFileList(new File("D:\\DICOM_data\\datasetDCM\\XABRAGA"), 0);
         //ArrayList<String> fileList = retrieveFileList(new File("D:\\DICOM_data\\DICOM_Images"), 0);
         //int borne = fileList.size();
         int borne = 1;
@@ -144,12 +146,14 @@ public class MongoPluginTest {
             URI result = null;
             try {
                 //DicomInputStream inputStream = new DicomInputStream(new File(fileList.get(i)));
-                DicomInputStream inputStream = new DicomInputStream(new File("D:\\DICOM_data\\DICOM_Images\\1.dcm"));
+                File file = new File("D:\\DICOM_data\\datasetDCM\\Cardiac\\IM-0001-0031.dcm435509b7-1130-4f72-9c72-9ad60ae4c34e.dcm");
+                DicomInputStream inputStream = new DicomInputStream(file);
                 DicomObject dcmObj = inputStream.readDicomObject();
                 System.out.println("Store  from " + fileList.get(i) + " - " + (i + 1) + "th file");
                 result = list.get(0).store(dcmObj);
                 Assert.assertThat(result, IsNull.notNullValue());
             } catch (IOException e) {
+                System.out.println(e.getMessage());
             }
             boolean b = list.get(0).handles((URI) result);
             assertEquals(b, true);
@@ -167,9 +171,7 @@ public class MongoPluginTest {
             task.run();
             System.out.println("Remove to   " + result);
             for(StorageInputStream sis : listRes){
-                String str = sis.getURI().toString();
-                URI uriTemp = new URI(str.replaceAll(".B", ".MD"));
-                instance.getIndexPlugins().get(0).unindex(uriTemp);
+                instance.getIndexPlugins().get(0).unindex(sis.getURI());
             }
             list.get(0).remove(result);
             listRes = list.get(0).at(result);
@@ -188,7 +190,7 @@ public class MongoPluginTest {
      */
     @Test
     public void testStore_DicomInputStream() throws Exception {
-        /*ArrayList<String> fileList = retrieveFileList(new File("D:\\DICOM_data\\DICOM_Images"), 0);
+        ArrayList<String> fileList = retrieveFileList(new File("D:\\DICOM_data\\DICOM_Images"), 0);
         //int borne = fileList.size();
         int borne = 1;
         System.out.println("Store "+borne+" files");
@@ -224,6 +226,6 @@ public class MongoPluginTest {
                 cmp++;
             }
             assertEquals(cmp,0);
-        }*/
+        }
     }
 }

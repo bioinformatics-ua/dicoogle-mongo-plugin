@@ -86,8 +86,7 @@ class MongoStorage implements StorageInterface {
         if (!isEnable || mongoClient == null || dicomObject == null) {
             return null;
         }
-        //String fileName = dicomObject.get(Tag.SOPInstanceUID).getValueAsString(dicomObject.getSpecificCharacterSet(), 0);
-        String fileName = dicomObject.get(Tag.SOPInstanceUID).getValueAsString(dicomObject.getSpecificCharacterSet(), 0)+".B";
+        String fileName = dicomObject.get(Tag.SOPInstanceUID).getValueAsString(dicomObject.getSpecificCharacterSet(), 0);
         URI uri;
         try {
             uri = new URI(this.location + fileName);
@@ -112,10 +111,24 @@ class MongoStorage implements StorageInterface {
 
     @Override
     public URI store(DicomInputStream stream) throws IOException {
-        if (!isEnable) {
+        if (!isEnable || mongoClient == null || stream == null) {
             return null;
         }
-        return this.store(stream.readDicomObject());
+        DicomObject dicomObject = stream.readDicomObject();
+
+        String fileName = dicomObject.get(Tag.SOPInstanceUID).getValueAsString(dicomObject.getSpecificCharacterSet(), 0);
+        URI uri;
+        try {
+            uri = new URI(this.location + fileName);
+        } catch (URISyntaxException e) {
+            System.out.println("Error : URISyntaxException");
+            return null;
+        }
+        GridFS saveFs = new GridFS(db);
+        GridFSInputFile ins = saveFs.createFile(stream);
+        ins.setFilename(fileName);
+        ins.save(ins.getChunkSize());
+        return uri;
     }
 
     @Override
