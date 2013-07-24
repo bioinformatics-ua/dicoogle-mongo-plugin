@@ -19,7 +19,7 @@ import pt.ua.dicoogle.sdk.datastructs.SearchResult;
  * @author Louis
  */
 public class MongoUtil {
-    
+
     public static List<SearchResult> getListFromResult(List<DBObject> dbObjs, URI location, float score) {
         ArrayList<SearchResult> result = new ArrayList<SearchResult>();
         String strSOPUID = Dictionary.getInstance().tagName(Tag.SOPInstanceUID);
@@ -47,7 +47,7 @@ public class MongoUtil {
         }
         return result;
     }
-    
+
     private static BasicDBObject decodeStringToQuery(String strQuery) {
         BasicDBObject query;
         Object obj, lowObj, highObj;
@@ -264,17 +264,23 @@ public class MongoUtil {
     private static BasicDBObject madeQueryIsValueRegexInsensitive(String field, Object value, boolean isNot) {
         BasicDBObject query = new BasicDBObject();
         String str = field;
+        String strValue = (String) value;
+        if (strValue.endsWith(".*")) {
+            strValue = strValue.substring(0, strValue.length() - 1);
+        } else if (strValue.endsWith("*")) {
+            strValue = strValue.substring(0, strValue.length() - 1);
+        }
         if (!isNot) {
-            query.put(str, new BasicDBObject("$regex", value + ".*").append("$options", "i"));
+            query.put(str, new BasicDBObject("$regex", "^" + strValue + ".*").append("$options", "i"));
         } else {
-            query.put(str, new BasicDBObject("$ne", value));
+            query.put(str, new BasicDBObject("$ne", strValue));
         }
         return query;
     }
 
     private static BasicDBObject madeQueryIsBetween(String field, Object lowValue, Object highValue, boolean isInclusive) {
         BasicDBObject query = new BasicDBObject();
-        String str = "metadata." + field;
+        String str = field;
         if (!isInclusive) {
             query.put(str, new BasicDBObject("$gt", lowValue).append("$lt", highValue));
         } else {
