@@ -2,6 +2,6 @@
 <Config>
 <DefaultServerHost>localhost</DefaultServerHost>
 <DefaultServerPort>27017</DefaultServerPort>
-<DefaultDataBase>DICOM_Test</DefaultDataBase>
+<DefaultDataBase>DICOM_DataBaseTest</DefaultDataBase>
 <DefaultCollection>MetaData</DefaultCollection>
 </Config>

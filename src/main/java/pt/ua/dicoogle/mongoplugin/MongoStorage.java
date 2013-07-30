@@ -96,8 +96,7 @@ class MongoStorage implements StorageInterface {
         }
         try {
             ByteArrayOutputStream os = new ByteArrayOutputStream();
-            BufferedOutputStream bos = new BufferedOutputStream(os);
-            DicomOutputStream dos = new DicomOutputStream(bos);
+            DicomOutputStream dos = new DicomOutputStream(os);
             dos.writeDicomFile(dicomObject);
             GridFS saveFs = new GridFS(db);
             GridFSInputFile ins = saveFs.createFile(os.toByteArray());
@@ -114,7 +113,8 @@ class MongoStorage implements StorageInterface {
         if (!isEnable || mongoClient == null || stream == null) {
             return null;
         }
-        DicomObject dicomObject = stream.readDicomObject();
+        return this.store(stream.readDicomObject());
+        /*DicomObject dicomObject = stream.readDicomObject();
 
         String fileName = dicomObject.get(Tag.SOPInstanceUID).getValueAsString(dicomObject.getSpecificCharacterSet(), 0);
         URI uri;
@@ -128,7 +128,7 @@ class MongoStorage implements StorageInterface {
         GridFSInputFile ins = saveFs.createFile(stream);
         ins.setFilename(fileName);
         ins.save(ins.getChunkSize());
-        return uri;
+        return uri;*/
     }
 
     @Override

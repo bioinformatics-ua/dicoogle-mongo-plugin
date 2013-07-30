@@ -73,7 +73,7 @@ public class MongoPluginSetTest {
     @Test
     public void testQuery() {
         System.out.println("query");
-        String query = "PatientName:C*";
+        String query = "Modality:MR AND StudyDate:19950101-20100101 AND AccessionNumber:2153517";
         Object[] parameters = null;
         if(instance.getQueryPlugins().isEmpty())
             return;
