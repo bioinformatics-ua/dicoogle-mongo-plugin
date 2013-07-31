@@ -75,9 +75,7 @@ class MongoStorage implements StorageInterface {
         }
         ArrayList<StorageInputStream> list = new ArrayList<StorageInputStream>();
         MongoStorageInputStream MongoStorageIn = new MongoStorageInputStream(pUri);
-        if (MongoStorageIn.getInputStream() != null) {
-            list.add(MongoStorageIn);
-        }
+        list.add(MongoStorageIn);
         return list;
     }
 
@@ -102,6 +100,7 @@ class MongoStorage implements StorageInterface {
             GridFSInputFile ins = saveFs.createFile(os.toByteArray());
             ins.setFilename(fileName);
             ins.save(ins.getChunkSize());
+            os.close();
         } catch (IOException ex) {
             Logger.getLogger(MongoStorage.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -116,19 +115,19 @@ class MongoStorage implements StorageInterface {
         return this.store(stream.readDicomObject());
         /*DicomObject dicomObject = stream.readDicomObject();
 
-        String fileName = dicomObject.get(Tag.SOPInstanceUID).getValueAsString(dicomObject.getSpecificCharacterSet(), 0);
-        URI uri;
-        try {
-            uri = new URI(this.location + fileName);
-        } catch (URISyntaxException e) {
-            System.out.println("Error : URISyntaxException");
-            return null;
-        }
-        GridFS saveFs = new GridFS(db);
-        GridFSInputFile ins = saveFs.createFile(stream);
-        ins.setFilename(fileName);
-        ins.save(ins.getChunkSize());
-        return uri;*/
+         String fileName = dicomObject.get(Tag.SOPInstanceUID).getValueAsString(dicomObject.getSpecificCharacterSet(), 0);
+         URI uri;
+         try {
+         uri = new URI(this.location + fileName);
+         } catch (URISyntaxException e) {
+         System.out.println("Error : URISyntaxException");
+         return null;
+         }
+         GridFS saveFs = new GridFS(db);
+         GridFSInputFile ins = saveFs.createFile(stream);
+         ins.setFilename(fileName);
+         ins.save(ins.getChunkSize());
+         return uri;*/
     }
 
     @Override

@@ -54,11 +54,11 @@ public class MongoCallable implements Callable<Report> {
             String SOPInstanceUID;
             long start, end;
             start = System.currentTimeMillis();
-            InputStream is = stream.getInputStream();
-            InputStream bufferedIn = new BufferedInputStream(is);
             try {
-                DicomInputStream dis = new DicomInputStream(bufferedIn);
+                DicomInputStream dis = new DicomInputStream(stream.getInputStream());
                 DicomObject dicomObj = dis.readDicomObject();
+                dis.close();
+                
                 SOPInstanceUID = dicomObj.get(Tag.SOPInstanceUID).getValueAsString(dicomObj.getSpecificCharacterSet(), 0);
                 HashMap<String, Object> map = retrieveHeader(dicomObj);
                 BasicDBObject obj = new BasicDBObject(map);
