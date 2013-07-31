@@ -31,6 +31,7 @@ public class MongoUtil {
                 try {
                     uri = new URI(str);
                 } catch (URISyntaxException e) {
+                    uri = location;
                 }
                 HashMap<String, Object> map = new HashMap<String, Object>();
                 HashMap<String, Object> mapTemp = (HashMap<String, Object>) dbObjs.get(i).toMap();
