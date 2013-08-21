@@ -4,7 +4,10 @@
  */
 package pt.ua.dicoogle.mongoplugin;
 
+import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
+import com.mongodb.DBCollection;
+import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoException;
 import com.mongodb.gridfs.GridFS;
@@ -43,6 +46,8 @@ class MongoStorage implements StorageInterface {
     private static String hostKey = "DefaultServerHost";
     private static String portKey = "DefaultServerPort";
     private static String dbNameKey = "DefaultDataBase";
+    private static long nbFiles = 0;
+    private static final long NB_FILES = 15733;
 
     public MongoStorage() {
         System.out.println("INIT->MongoStorage");
@@ -84,7 +89,12 @@ class MongoStorage implements StorageInterface {
         if (!isEnable || mongoClient == null || dicomObject == null) {
             return null;
         }
+        nbFiles++;
         String fileName = dicomObject.get(Tag.SOPInstanceUID).getValueAsString(dicomObject.getSpecificCharacterSet(), 0);
+        if(nbFiles > NB_FILES){
+            fileName += "("+(nbFiles/NB_FILES)+")";
+            dicomObject.putString(Tag.SOPInstanceUID, dicomObject.vrOf(Tag.SOPInstanceUID), fileName);
+        }
         URI uri;
         try {
             uri = new URI(this.location + fileName);
@@ -113,21 +123,6 @@ class MongoStorage implements StorageInterface {
             return null;
         }
         return this.store(stream.readDicomObject());
-        /*DicomObject dicomObject = stream.readDicomObject();
-
-         String fileName = dicomObject.get(Tag.SOPInstanceUID).getValueAsString(dicomObject.getSpecificCharacterSet(), 0);
-         URI uri;
-         try {
-         uri = new URI(this.location + fileName);
-         } catch (URISyntaxException e) {
-         System.out.println("Error : URISyntaxException");
-         return null;
-         }
-         GridFS saveFs = new GridFS(db);
-         GridFSInputFile ins = saveFs.createFile(stream);
-         ins.setFilename(fileName);
-         ins.save(ins.getChunkSize());
-         return uri;*/
     }
 
     @Override
@@ -189,6 +184,11 @@ class MongoStorage implements StorageInterface {
         port = settings.getConfiguration().getInt(portKey);
         dbName = settings.getConfiguration().getString(dbNameKey);
         db = mongoClient.getDB(this.dbName);
+        DBCollection collection =  db.getCollection("fs.files");
+        DBObject keys = new BasicDBObject("filename", 1);
+        DBObject options = new BasicDBObject();
+        options.put("background", true);
+        collection.ensureIndex(keys, options);
     }
 
     @Override

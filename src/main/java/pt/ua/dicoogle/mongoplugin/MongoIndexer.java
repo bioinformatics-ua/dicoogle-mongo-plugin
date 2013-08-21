@@ -103,6 +103,11 @@ class MongoIndexer implements IndexerInterface {
         dbName = settings.getConfiguration().getString(dbNameKey);
         collectionName = settings.getConfiguration().getString(collectionNameKey);
         collection = mongoClient.getDB(dbName).getCollection(collectionName);
+        DBObject keys = new BasicDBObject();
+        keys.put("SOPInstanceUID", 1);
+        keys.put("SeriesInstanceUID", 1);
+        DBObject options = new BasicDBObject("background", true);
+        collection.ensureIndex(keys, options);
     }
 
     @Override

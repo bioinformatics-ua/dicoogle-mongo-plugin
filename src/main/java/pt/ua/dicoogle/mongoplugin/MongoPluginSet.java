@@ -38,8 +38,8 @@ public class MongoPluginSet extends PluginBase {
         this.queryPlugins.add(plugQuery);
         plugIndexer = new MongoIndexer();
         this.indexPlugins.add(plugIndexer);
-        plugStorage = new MongoStorage();
-        this.storagePlugins.add(plugStorage);
+       /* plugStorage = new MongoStorage();
+        this.storagePlugins.add(plugStorage);*/
     }
 
    public MongoPluginSet(ConfigurationHolder settings) throws ConfigurationException {

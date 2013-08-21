@@ -1,0 +1,71 @@
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/svn/Dicoogle/!svn/ver/729/DICOMTester/lib
+END
+jdom-2.0.2.jar
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/svn/Dicoogle/!svn/ver/725/DICOMTester/lib/jdom-2.0.2.jar
+END
+dcm4che-tool-dcmqr-2.0.26.jar
+K 25
+svn:wc:ra_dav:version-url
+V 72
+/svn/Dicoogle/!svn/ver/729/DICOMTester/lib/dcm4che-tool-dcmqr-2.0.26.jar
+END
+slf4j-api-1.6.1.jar
+K 25
+svn:wc:ra_dav:version-url
+V 62
+/svn/Dicoogle/!svn/ver/729/DICOMTester/lib/slf4j-api-1.6.1.jar
+END
+dcm4che-filecache-2.0.26.jar
+K 25
+svn:wc:ra_dav:version-url
+V 71
+/svn/Dicoogle/!svn/ver/729/DICOMTester/lib/dcm4che-filecache-2.0.26.jar
+END
+dcm4che-tool-dcmsnd-2.0.26.jar
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/svn/Dicoogle/!svn/ver/729/DICOMTester/lib/dcm4che-tool-dcmsnd-2.0.26.jar
+END
+commons-cli-1.2.jar
+K 25
+svn:wc:ra_dav:version-url
+V 62
+/svn/Dicoogle/!svn/ver/729/DICOMTester/lib/commons-cli-1.2.jar
+END
+dcm4che-net-2.0.26.jar
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/svn/Dicoogle/!svn/ver/729/DICOMTester/lib/dcm4che-net-2.0.26.jar
+END
+dcm4che-core-2.0.26.jar
+K 25
+svn:wc:ra_dav:version-url
+V 66
+/svn/Dicoogle/!svn/ver/729/DICOMTester/lib/dcm4che-core-2.0.26.jar
+END
+dcm4che-tool-dcmrcv-2.0.26.jar
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/svn/Dicoogle/!svn/ver/729/DICOMTester/lib/dcm4che-tool-dcmrcv-2.0.26.jar
+END
+log4j-1.2.16.jar
+K 25
+svn:wc:ra_dav:version-url
+V 59
+/svn/Dicoogle/!svn/ver/729/DICOMTester/lib/log4j-1.2.16.jar
+END
+slf4j-log4j12-1.6.1.jar
+K 25
+svn:wc:ra_dav:version-url
+V 66
+/svn/Dicoogle/!svn/ver/729/DICOMTester/lib/slf4j-log4j12-1.6.1.jar
+END
